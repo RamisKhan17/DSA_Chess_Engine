@@ -59,6 +59,15 @@ private:
     bool gameOver;
     std::string gameResult;
     
+    // Scaling variables
+    float scaleX;
+    float scaleY;
+    float currentSquareSize;
+    float currentBoardSize;
+    float currentInfoPanelWidth;
+    int currentWindowWidth;
+    int currentWindowHeight;
+    
 public:
     /**
      * Constructor
@@ -225,6 +234,13 @@ private:
      * Resets selection state
      */
     void clearSelection();
+    
+    /**
+     * Handles window resize events
+     * @param width - New window width
+     * @param height - New window height
+     */
+    void handleWindowResize(int width, int height);
     
     /**
      * Converts move to algebraic notation for display
