@@ -67,7 +67,7 @@ void ChessGUI::loadResources() {
     }
     
     // Try to load font (use default if not available)
-    if (!font.openFromFile("arial.ttf")) {
+    if (!font.openFromFile("assets/fonts/ARIAL.ttf")) {
         // Font not found - that's okay, we'll render without text
         std::cout << "Note: Font file not found. Text rendering disabled.\n";
     }
@@ -144,7 +144,13 @@ void ChessGUI::handleMousePress(int x, int y) {
     if (piece != EMPTY) {
         int side = board.getSideToMove();
         if ((side == 0 && piece > 0) || (side == 1 && piece < 0)) {
-            // Start dragging
+            // If clicking on the same piece that's already selected, deselect it
+            if (selectedSquare == square) {
+                clearSelection();
+                return;
+            }
+            
+            // Start dragging (for visual feedback)
             isDragging = true;
             draggedPiece = piece;
             draggedSquare = square;
@@ -157,8 +163,9 @@ void ChessGUI::handleMousePress(int x, int y) {
         }
     }
     
-    // If already have a piece selected, try to move
+    // If clicking on empty square or opponent piece, clear selection
     if (selectedSquare >= 0) {
+        // If already have a piece selected, try to move
         if (tryMakeMove(selectedSquare, square)) {
             clearSelection();
         } else {
@@ -181,7 +188,7 @@ void ChessGUI::handleMouseRelease(int x, int y) {
     isDragging = false;
     draggedPiece = EMPTY;
     draggedSquare = -1;
-    clearSelection();
+    // Don't clear selection here - let it stay visible until next click
 }
 
 void ChessGUI::handleMouseMove(int x, int y) {
