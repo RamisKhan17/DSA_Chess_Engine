@@ -68,6 +68,11 @@ private:
     int currentWindowWidth;
     int currentWindowHeight;
     
+    // Promotion dialog state
+    bool showingPromotionDialog;
+    int promotionSquare;
+    std::vector<Move> pendingPromotionMoves;
+    
 public:
     /**
      * Constructor
@@ -241,6 +246,26 @@ private:
      * @param height - New window height
      */
     void handleWindowResize(int width, int height);
+    
+    /**
+     * Shows promotion dialog and handles piece selection
+     * @param moves - Available promotion moves
+     * @param square - Square where promotion occurs
+     */
+    void showPromotionDialog(const std::vector<Move>& moves, int square);
+    
+    /**
+     * Draws the promotion dialog
+     */
+    void drawPromotionDialog();
+    
+    /**
+     * Handles promotion dialog mouse clicks
+     * @param x - Mouse x coordinate
+     * @param y - Mouse y coordinate
+     * @return true if a piece was selected
+     */
+    bool handlePromotionClick(int x, int y);
     
     /**
      * Converts move to algebraic notation for display

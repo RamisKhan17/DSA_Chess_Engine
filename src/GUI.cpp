@@ -30,6 +30,10 @@ ChessGUI::ChessGUI(Board& b) : board(b) {
     currentBoardSize = BOARD_SIZE;
     currentInfoPanelWidth = INFO_PANEL_WIDTH;
     
+    // Initialize promotion dialog state
+    showingPromotionDialog = false;
+    promotionSquare = -1;
+    
     // Initialize colors and resources
     initializeColors();
     loadResources();
@@ -106,7 +110,14 @@ void ChessGUI::handleEvents() {
         
         if (auto mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
             if (mousePressed->button == sf::Mouse::Button::Left) {
-                handleMousePress(mousePressed->position.x, mousePressed->position.y);
+                if (showingPromotionDialog) {
+                    if (handlePromotionClick(mousePressed->position.x, mousePressed->position.y)) {
+                        // Promotion piece selected, dialog will be closed
+                        showingPromotionDialog = false;
+                    }
+                } else {
+                    handleMousePress(mousePressed->position.x, mousePressed->position.y);
+                }
             }
         }
         
@@ -267,13 +278,8 @@ bool ChessGUI::tryMakeMove(int fromSquare, int toSquare) {
     
     // Handle promotion
     if (!promotionMoves.empty()) {
-        int promotionPiece = selectPromotionPiece();
-        for (Move& move : promotionMoves) {
-            if (move.promotionPiece == promotionPiece) {
-                foundMove = &move;
-                break;
-            }
-        }
+        showPromotionDialog(promotionMoves, toSquare);
+        return false;  // Don't make the move yet, wait for user selection
     }
     
     if (foundMove) {
@@ -295,13 +301,10 @@ bool ChessGUI::tryMakeMove(int fromSquare, int toSquare) {
 }
 
 int ChessGUI::selectPromotionPiece() {
-    // Simple promotion selection - default to queen
-    // In a full implementation, would show a dialog
-    
+    // This function is now handled by the promotion dialog
+    // Return a default value (should not be called when dialog is active)
     int side = board.getSideToMove();
     return (side == 0) ? WHITE_QUEEN : BLACK_QUEEN;
-    
-    // TODO: Implement graphical promotion dialog
 }
 
 // ==================== RENDERING ====================
@@ -314,6 +317,11 @@ void ChessGUI::render() {
     drawPieces();
     drawDraggedPiece();
     drawInfoPanel();
+    
+    // Draw promotion dialog if active
+    if (showingPromotionDialog) {
+        drawPromotionDialog();
+    }
     
     window.display();
 }
@@ -573,6 +581,117 @@ void ChessGUI::drawGameStatus() {
     }
     
     window.draw(statusText);
+}
+
+void ChessGUI::showPromotionDialog(const std::vector<Move>& moves, int square) {
+    showingPromotionDialog = true;
+    promotionSquare = square;
+    pendingPromotionMoves = moves;
+}
+
+void ChessGUI::drawPromotionDialog() {
+    if (pendingPromotionMoves.empty()) return;
+
+    // Calculate dialog position (center of the board)
+    float dialogWidth = currentSquareSize * 6.0f;
+    float dialogHeight = currentSquareSize * 2.5f;
+    float dialogX = (currentBoardSize - dialogWidth) / 2.0f;
+    float dialogY = (currentBoardSize - dialogHeight) / 2.0f;
+
+    // Draw dialog background
+    sf::RectangleShape dialog(sf::Vector2f(dialogWidth, dialogHeight));
+    dialog.setPosition(sf::Vector2f(dialogX, dialogY));
+    dialog.setFillColor(sf::Color(50, 50, 50, 220));
+    dialog.setOutlineThickness(3);
+    dialog.setOutlineColor(sf::Color::White);
+    window.draw(dialog);
+
+    // Draw title
+    if (font.getInfo().family != "") {
+        float titleSize = 20.0f * std::min(scaleX, scaleY);
+        sf::Text title(font, "Choose Promotion Piece", static_cast<unsigned int>(titleSize));
+        title.setFillColor(sf::Color::White);
+        title.setStyle(sf::Text::Bold);
+        title.setPosition(sf::Vector2f(dialogX + 10, dialogY + 10));
+        window.draw(title);
+    }
+
+    // Draw promotion piece options
+    float squareSize = currentSquareSize;
+    float pieceSpacing = currentSquareSize * 1.2f;
+    
+    // Calculate the total width of all squares including spacing
+    size_t numPieces = std::min(pendingPromotionMoves.size(), size_t(4));
+    float totalWidth = (numPieces * squareSize) + ((numPieces - 1) * (pieceSpacing - squareSize));
+    
+    // Center the entire row of squares horizontally
+    float startX = dialogX + (dialogWidth - totalWidth) / 2.0f;
+    float squareY = dialogY + dialogHeight * 0.4f;
+
+    for (size_t i = 0; i < numPieces; i++) {
+        // Calculate square position
+        float squareX = startX + i * pieceSpacing;
+        
+        // Draw piece background square
+        sf::RectangleShape pieceBg(sf::Vector2f(squareSize, squareSize));
+        pieceBg.setPosition(sf::Vector2f(squareX, squareY));
+        pieceBg.setFillColor(sf::Color(240, 240, 240, 200));
+        pieceBg.setOutlineThickness(2);
+        pieceBg.setOutlineColor(sf::Color::Black);
+        window.draw(pieceBg);
+
+        // Draw piece at the same position as the square
+        int piece = pendingPromotionMoves[i].promotionPiece;
+        drawPiece(piece, squareX, squareY, 1.0f);
+    }
+}
+
+bool ChessGUI::handlePromotionClick(int x, int y) {
+    if (pendingPromotionMoves.empty()) return false;
+    
+    // Calculate dialog position
+    float dialogWidth = currentSquareSize * 4.5f;
+    float dialogHeight = currentSquareSize * 1.5f;
+    float dialogX = (currentBoardSize - dialogWidth) / 2.0f;
+    float dialogY = (currentBoardSize - dialogHeight) / 2.0f;
+    
+    // Check if click is within dialog
+    if (x < dialogX || x > dialogX + dialogWidth || 
+        y < dialogY || y > dialogY + dialogHeight) {
+        return false;
+    }
+    
+    // Calculate which piece was clicked
+    float pieceSize = currentSquareSize * 0.8f;
+    float pieceSpacing = currentSquareSize * 1.1f;
+    float startX = dialogX + (dialogWidth - pieceSpacing * 3) / 2.0f;
+    float pieceY = dialogY + dialogHeight * 0.4f;
+    
+    float relativeX = x - startX;
+    int pieceIndex = static_cast<int>(relativeX / pieceSpacing);
+    
+    if (pieceIndex >= 0 && pieceIndex < static_cast<int>(pendingPromotionMoves.size())) {
+        // Find the selected move and execute it
+        Move selectedMove = pendingPromotionMoves[pieceIndex];
+        
+        // Store move for history
+        std::string moveStr = formatMove(selectedMove, board.getFullMoveNumber());
+        
+        // Make the move
+        lastMoveFrom = selectedMove.from;
+        lastMoveTo = selectedMove.to;
+        
+        board.makeMove(selectedMove);
+        moveHistory.push_back(moveStr);
+        
+        updateGameState();
+        
+        // Clear promotion state
+        pendingPromotionMoves.clear();
+        return true;
+    }
+    
+    return false;
 }
 
 void ChessGUI::drawCapturedPieces() {

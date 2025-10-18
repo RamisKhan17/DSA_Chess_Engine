@@ -25,8 +25,9 @@ int main() {
     try {
         // Create board and set starting position
         Board board;
-        // board.setStartingPosition();
-        board.setFEN("k7/8/8/8/8/8/1Q6/K7 b - - 0 1");
+        board.setStartingPosition();
+        board.setFEN("rnbqkbn1/pppppppP/8/8/8/8/PPPPPPPp/RNBQKBN1 w KQkq - 0 1");
+        // board.setFEN("k7/8/8/8/8/8/1Q6/K7 b - - 0 1");
       
         std::cout << "Board initialized successfully!\n";
         std::cout << "Starting position:\n";
