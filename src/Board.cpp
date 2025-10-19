@@ -579,14 +579,37 @@ bool Board::isSquareAttacked(int square, int attackingSide) const {
     }
     
     // Check pawn attacks
-    int pawnDirection = (attackingSide == 0) ? 16 : -16;
-    int pawnAttacks[2] = {pawnDirection - 1, pawnDirection + 1};
+    // White pawns attack diagonally forward (toward higher ranks)
+    // Black pawns attack diagonally forward (toward lower ranks)
+    // To find attacking pawns: look for pawns that are behind the target square
+    int pawnAttacks[2];
+    if (attackingSide == 0) {  // White pawns attacking
+        pawnAttacks[0] = -17;  // diagonal down-left
+        pawnAttacks[1] = -15;  // diagonal down-right
+    } else {  // Black pawns attacking
+        pawnAttacks[0] = 15;   // diagonal up-left
+        pawnAttacks[1] = 17;   // diagonal up-right
+    }
     int pawn = (attackingSide == 0) ? WHITE_PAWN : BLACK_PAWN;
     
     for (int i = 0; i < 2; i++) {
         int from = square + pawnAttacks[i];
         if (!(from & 0x88) && board[from] == pawn) {
-            return true;
+            // Additional check: ensure the pawn is in a position to attack forward
+            int fromRank = from >> 4;
+            int targetRank = square >> 4;
+            
+            if (attackingSide == 0) {  // White pawn
+                // White pawn must be on a lower rank than the target square
+                if (fromRank < targetRank) {
+                    return true;
+                }
+            } else {  // Black pawn
+                // Black pawn must be on a higher rank than the target square
+                if (fromRank > targetRank) {
+                    return true;
+                }
+            }
         }
     }
     
