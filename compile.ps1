@@ -4,8 +4,8 @@
 Write-Host "Compiling Chess Engine (MinGW g++)" -ForegroundColor Green
 
 # Adjust these if your SFML path changes
-$sfmlInclude = "D:/C++ Libraries/SFML-3.0.2/include"
-$sfmlLib = "D:/C++ Libraries/SFML-3.0.2/lib"
+$sfmlInclude = "C:\C_Plus_Libraries\SFML-3.0.2\include"
+$sfmlLib = "C:\C_Plus_Libraries\SFML-3.0.2\lib"
 
 $argsList = @(
     "-std=c++17",
@@ -14,6 +14,7 @@ $argsList = @(
     "-L$sfmlLib",
     "src/Board.cpp",
     "src/GUI.cpp",
+    "src/Engine.cpp"
     "main.cpp",
     "-lsfml-graphics",
     "-lsfml-window",
