@@ -9,36 +9,41 @@
 namespace
 {
     // ------------------ Piece type codes (from Board.cpp) ------------------
-    constexpr int PAWN   = 1;
+    constexpr int PAWN = 1;
     constexpr int KNIGHT = 2;
     constexpr int BISHOP = 3;
-    constexpr int ROOK   = 4;
-    constexpr int QUEEN  = 5;
-    constexpr int KING   = 6;
+    constexpr int ROOK = 4;
+    constexpr int QUEEN = 5;
+    constexpr int KING = 6;
 
     // ------------------ Base Piece Values (centipawns) ------------------
-    constexpr int PAWN_VALUE   = 100;
+    constexpr int PAWN_VALUE = 100;
     constexpr int KNIGHT_VALUE = 320;
     constexpr int BISHOP_VALUE = 330;
-    constexpr int ROOK_VALUE   = 500;
-    constexpr int QUEEN_VALUE  = 900;
-    constexpr int MATE_SCORE   = 100000;
+    constexpr int ROOK_VALUE = 500;
+    constexpr int QUEEN_VALUE = 900;
+    constexpr int MATE_SCORE = 100000;
 
     // ------------------ Pawn Piece-Square Table ------------------
     // Index: [rank][file]  (rank/file = 0..7)
     const int pawnPST[8][8] = {
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {5, 5, 5, 5, 5, 5, 5, 5},
-        {1, 1, 2, 3, 3, 2, 1, 1},
-        {0, 0, 0, 2, 2, 0, 0, 0},
-        {0, 0, 0, 1, 1, 0, 0, 0},
-        {1, 1, 1, 0, 0, 1, 1, 1},
-        {5, 5, 5, 5, 5, 5, 5, 5},
-        {0, 0, 0, 0, 0, 0, 0, 0}
+        {0, 0, 0, 0, 0, 0, 0, 0},       // back rank (0)
+        {0, 0, 0, 0, 0, 0, 0, 0},       // 2nd rank (start) → no bonus
+        {5, 5, 10, 15, 15, 10, 5, 5},   // 3rd rank → central pawns preferred
+        {5, 10, 15, 20, 20, 15, 10, 5}, // 4th rank
+        {0, 5, 10, 15, 15, 10, 5, 0},   // 5th rank
+        {0, 0, 0, 5, 5, 0, 0, 0},       // 6th rank
+        {0, 0, 0, 0, 0, 0, 0, 0},       // 7th rank (reserved for endgame bonus)
+        {0, 0, 0, 0, 0, 0, 0, 0}        // promotion rank (not on board yet)
     };
 
     // ------------------ Game Phase ------------------
-    enum class GamePhase { OPENING, MIDDLEGAME, ENDGAME };
+    enum class GamePhase
+    {
+        OPENING,
+        MIDDLEGAME,
+        ENDGAME
+    };
 
     GamePhase detectGamePhase(const Board &board)
     {
@@ -47,25 +52,29 @@ namespace
 
         for (int sq = 0; sq < 128; ++sq)
         {
-            if (sq & 0x88) continue;
+            if (sq & 0x88)
+                continue;
             int piece = board.getPiece(sq);
-            if (piece == EMPTY) continue;
+            if (piece == EMPTY)
+                continue;
 
             switch (std::abs(piece))
             {
-                case QUEEN:
-                    if (piece > 0) whiteQueen = true;
-                    else           blackQueen = true;
-                    break;
+            case QUEEN:
+                if (piece > 0)
+                    whiteQueen = true;
+                else
+                    blackQueen = true;
+                break;
 
-                case BISHOP:
-                case KNIGHT:
-                case ROOK:
-                    ++minorAndRooks;
-                    break;
+            case BISHOP:
+            case KNIGHT:
+            case ROOK:
+                ++minorAndRooks;
+                break;
 
-                default:
-                    break;
+            default:
+                break;
             }
         }
 
@@ -85,19 +94,33 @@ namespace
 
         for (int sq = 0; sq < 128; ++sq)
         {
-            if (sq & 0x88) continue;
+            if (sq & 0x88)
+                continue;
             int piece = board.getPiece(sq);
-            if (piece == EMPTY) continue;
+            if (piece == EMPTY)
+                continue;
 
             int val = 0;
             switch (std::abs(piece))
             {
-                case PAWN:   val = PAWN_VALUE;   break;
-                case KNIGHT: val = KNIGHT_VALUE; break;
-                case BISHOP: val = BISHOP_VALUE; break;
-                case ROOK:   val = ROOK_VALUE;   break;
-                case QUEEN:  val = QUEEN_VALUE;  break;
-                case KING:   val = 0;            break; // king value handled via safety
+            case PAWN:
+                val = PAWN_VALUE;
+                break;
+            case KNIGHT:
+                val = KNIGHT_VALUE;
+                break;
+            case BISHOP:
+                val = BISHOP_VALUE;
+                break;
+            case ROOK:
+                val = ROOK_VALUE;
+                break;
+            case QUEEN:
+                val = QUEEN_VALUE;
+                break;
+            case KING:
+                val = 0;
+                break; // king value handled via safety
             }
 
             score += (piece > 0 ? val : -val);
@@ -113,24 +136,26 @@ namespace
 
         for (int sq = 0; sq < 128; ++sq)
         {
-            if (sq & 0x88) continue;
+            if (sq & 0x88)
+                continue;
             int piece = board.getPiece(sq);
-            if (piece == EMPTY) continue;
+            if (piece == EMPTY)
+                continue;
 
             int r = rankOf(sq);
             int f = fileOf(sq);
 
             switch (std::abs(piece))
             {
-                case PAWN:
-                    if (piece > 0)
-                        score += pawnPST[r][f];
-                    else
-                        score -= pawnPST[7 - r][f]; // mirror for black
-                    break;
+            case PAWN:
+                if (piece > 0)
+                    score += pawnPST[r][f];
+                else
+                    score -= pawnPST[7 - r][f]; // mirror for black
+                break;
 
-                default:
-                    break;
+            default:
+                break;
             }
         }
 
@@ -146,13 +171,17 @@ namespace
 
         for (int sq = 0; sq < 128; ++sq)
         {
-            if (sq & 0x88) continue;
+            if (sq & 0x88)
+                continue;
             int piece = board.getPiece(sq);
-            if (std::abs(piece) != PAWN) continue;
+            if (std::abs(piece) != PAWN)
+                continue;
 
             int f = fileOf(sq);
-            if (piece > 0) whitePawnFiles[f]++;
-            else           blackPawnFiles[f]++;
+            if (piece > 0)
+                whitePawnFiles[f]++;
+            else
+                blackPawnFiles[f]++;
         }
 
         // Doubled pawns (very basic)
@@ -177,14 +206,19 @@ namespace
 
         for (int sq = 0; sq < 128; ++sq)
         {
-            if (sq & 0x88) continue;
+            if (sq & 0x88)
+                continue;
             int p = board.getPiece(sq);
-            if (p == WHITE_BISHOP) ++whiteBishops;
-            if (p == BLACK_BISHOP) ++blackBishops;
+            if (p == WHITE_BISHOP)
+                ++whiteBishops;
+            if (p == BLACK_BISHOP)
+                ++blackBishops;
         }
 
-        if (whiteBishops >= 2) score += 25;
-        if (blackBishops >= 2) score -= 25;
+        if (whiteBishops >= 2)
+            score += 25;
+        if (blackBishops >= 2)
+            score -= 25;
 
         return score;
     }
@@ -197,10 +231,13 @@ namespace
         // Example: rook on 7th rank
         for (int sq = 0; sq < 128; ++sq)
         {
-            if (sq & 0x88) continue;
+            if (sq & 0x88)
+                continue;
             int p = board.getPiece(sq);
-            if (p == WHITE_ROOK && rankOf(sq) == 6) score += 20;
-            if (p == BLACK_ROOK && rankOf(sq) == 1) score -= 20;
+            if (p == WHITE_ROOK && rankOf(sq) == 6)
+                score += 20;
+            if (p == BLACK_ROOK && rankOf(sq) == 1)
+                score -= 20;
         }
 
         return score;
@@ -211,7 +248,7 @@ namespace
     {
         auto moves = board.generateLegalMoves();
         int count = static_cast<int>(moves.size());
-        int score = count * 2;      // weight 2 per legal move (tune later)
+        int score = count * 2; // weight 2 per legal move (tune later)
 
         // sideToMove: 0 = White, 1 = Black (see Board.cpp / GUI.cpp)
         int sideToMove = board.getSideToMove();
@@ -233,11 +270,14 @@ namespace
         for (int sq : centers)
         {
             int p = board.getPiece(sq);
-            if (p == EMPTY) continue;
+            if (p == EMPTY)
+                continue;
 
             int bonus = 10;
-            if (p > 0) score += bonus;
-            else       score -= bonus;
+            if (p > 0)
+                score += bonus;
+            else
+                score -= bonus;
         }
 
         return score;
@@ -251,24 +291,30 @@ namespace
 
         for (int sq = 0; sq < 128; ++sq)
         {
-            if (sq & 0x88) continue;
+            if (sq & 0x88)
+                continue;
             int piece = board.getPiece(sq);
-            if (piece == EMPTY) continue;
+            if (piece == EMPTY)
+                continue;
 
             int friends = 0;
             for (int off : kingOffsets)
             {
                 int to = sq + off;
-                if (to & 0x88) continue;
+                if (to & 0x88)
+                    continue;
                 int p2 = board.getPiece(to);
-                if (p2 == EMPTY) continue;
+                if (p2 == EMPTY)
+                    continue;
                 if ((p2 > 0 && piece > 0) || (p2 < 0 && piece < 0))
                     ++friends;
             }
 
             int val = 3 * friends; // weight 3 per friendly neighbour
-            if (piece > 0) score += val;
-            else           score -= val;
+            if (piece > 0)
+                score += val;
+            else
+                score -= val;
         }
 
         return score;
@@ -283,22 +329,27 @@ namespace
         int mobility[128] = {0};
         for (const Move &m : moves)
         {
-            if (m.from & 0x88) continue;
+            if (m.from & 0x88)
+                continue;
             mobility[m.from]++;
         }
 
         for (int sq = 0; sq < 128; ++sq)
         {
-            if (sq & 0x88) continue;
+            if (sq & 0x88)
+                continue;
             int piece = board.getPiece(sq);
-            if (piece == EMPTY) continue;
+            if (piece == EMPTY)
+                continue;
 
             if ((std::abs(piece) == KNIGHT || std::abs(piece) == BISHOP) &&
                 mobility[sq] <= 1)
             {
                 int pen = 20;
-                if (piece > 0) score -= pen;
-                else           score += pen;
+                if (piece > 0)
+                    score -= pen;
+                else
+                    score += pen;
             }
         }
 
@@ -313,20 +364,25 @@ namespace
 
         for (int sq = 0; sq < 128; ++sq)
         {
-            if (sq & 0x88) continue;
+            if (sq & 0x88)
+                continue;
             int p = board.getPiece(sq);
-            if (p == WHITE_KING) whiteKingSq = sq;
-            if (p == BLACK_KING) blackKingSq = sq;
+            if (p == WHITE_KING)
+                whiteKingSq = sq;
+            if (p == BLACK_KING)
+                blackKingSq = sq;
         }
 
-        auto kingSafety = [&](int sq, bool isWhite) {
-            if (sq < 0) return 0;
+        auto kingSafety = [&](int sq, bool isWhite)
+        {
+            if (sq < 0)
+                return 0;
             int r = rankOf(sq);
             int f = fileOf(sq);
             int s = 0;
 
             bool inCenterFile = (f >= 2 && f <= 5);
-            bool inBackRank   = (isWhite ? r == 0 : r == 7);
+            bool inBackRank = (isWhite ? r == 0 : r == 7);
 
             if (!inBackRank && phase != GamePhase::ENDGAME)
                 s -= 30; // uncastled / off back rank
@@ -353,16 +409,20 @@ namespace
 
         for (int sq = 0; sq < 128; ++sq)
         {
-            if (sq & 0x88) continue;
+            if (sq & 0x88)
+                continue;
             int p = board.getPiece(sq);
-            if (p == EMPTY) continue;
+            if (p == EMPTY)
+                continue;
 
             int r = rankOf(sq);
 
             // White piece in Black half
-            if (p > 0 && r >= 4) score += 5;
+            if (p > 0 && r >= 4)
+                score += 5;
             // Black piece in White half
-            if (p < 0 && r <= 3) score -= 5;
+            if (p < 0 && r <= 3)
+                score -= 5;
         }
 
         return score;

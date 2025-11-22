@@ -18,6 +18,8 @@
  * - Move history and game status display
  */
 
+int ENGINE_DEPTH = 4;
+
 int main()
 {
     std::cout << "Chess Engine - DSA Project\n";
@@ -32,31 +34,12 @@ int main()
         board.setStartingPosition();
         board.setFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
         // board.setFEN("k7/8/8/8/8/8/1Q6/K7 b - - 0 1");
-        Engine engine(board, 4);
-        std::cout << "Board initialized successfully!\n";
-        std::cout << "Starting position:\n";
-        board.print();
-
+        Engine engine(board, ENGINE_DEPTH);
         // Test move generation
         std::vector<Move> legalMoves = board.generateLegalMoves();
-        std::cout << "\nLegal moves from starting position: " << legalMoves.size() << "\n";
-        std::cout << "Expected: 20 moves\n\n";
-
-        if (legalMoves.size() != 20)
-        {
-            std::cout << "Warning: Move generation may have issues!\n";
-        }
-
-        std::cout << "Starting GUI...\n\n";
-        std::cout << "Controls:\n";
-        std::cout << "  - Click piece to select\n";
-        std::cout << "  - Click destination to move\n";
-        std::cout << "  - Drag and drop pieces\n";
-        std::cout << "  - Press U to undo\n";
-        std::cout << "  - Press R to reset\n\n";
 
         // Create and run GUI
-        ChessGUI gui(board, engine, -1);
+        ChessGUI gui(board, engine, 1);
         gui.run();
     }
     catch (const std::exception &e)
