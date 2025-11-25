@@ -2,6 +2,8 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <chrono>
+using namespace std::chrono;
 
 // ==================== CONSTRUCTOR ====================
 
@@ -77,7 +79,7 @@ void ChessGUI::loadResources()
         if (texture.loadFromFile(pair.second))
         {
             pieceTextures[pair.first] = texture;
-            std::cout << "Loaded texture: " << pair.second << std::endl;
+            // std::cout << "Loaded texture: " << pair.second << std::endl;
         }
         else
         {
@@ -103,7 +105,13 @@ void ChessGUI::run()
         render();
         if (engineTurn > 0)
         {
+            auto start = high_resolution_clock::now();
+
             makeEngineMove();
+            auto end = high_resolution_clock::now();
+            auto duration = duration_cast<milliseconds>(end - start);
+
+            std::cout << "Time taken: " << duration.count() << " ms\n";
             engineTurn = -engineTurn;
         }
     }

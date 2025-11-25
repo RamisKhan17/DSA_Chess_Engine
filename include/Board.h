@@ -80,6 +80,11 @@ struct Move
     std::string toUCI() const;
 };
 
+inline bool operator==(const Move &moveA, const Move &moveB)
+{
+    return moveA.from == moveB.from && moveA.to == moveB.to && moveA.piece == moveB.piece && moveA.capturedPiece == moveB.capturedPiece && moveA.promotionPiece == moveB.promotionPiece && moveA.flags == moveB.flags && moveA.score == moveB.score;
+}
+
 /**
  * Structure to store move history for undo functionality
  */
