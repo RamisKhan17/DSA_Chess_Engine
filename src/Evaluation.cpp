@@ -37,6 +37,79 @@ namespace
         {0, 0, 0, 0, 0, 0, 0, 0}
     };
 
+        // ------------------ Knight PST (minimal) ------------------
+    const int knightPST[8][8] = {
+        {-30,-20,-10,-10,-10,-10,-20,-30},
+        {-20, -5,  0,  5,  5,  0, -5,-20},
+        {-10,  5, 10, 15, 15, 10,  5,-10},
+        {-10,  0, 15, 20, 20, 15,  0,-10},
+        {-10,  0, 15, 20, 20, 15,  0,-10},
+        {-10,  5, 10, 15, 15, 10,  5,-10},
+        {-20, -5,  0,  5,  5,  0, -5,-20},
+        {-30,-20,-10,-10,-10,-10,-20,-30}
+    };
+
+    // ------------------ Bishop PST (minimal) ------------------
+    const int bishopPST[8][8] = {
+        {-20,-10,-10,-10,-10,-10,-10,-20},
+        {-10,  0,  0,  0,  0,  0,  0,-10},
+        {-10,  0,  5, 10, 10,  5,  0,-10},
+        {-10,  5, 10, 15, 15, 10,  5,-10},
+        {-10,  5, 10, 15, 15, 10,  5,-10},
+        {-10,  0,  5, 10, 10,  5,  0,-10},
+        {-10,  0,  0,  0,  0,  0,  0,-10},
+        {-20,-10,-10,-10,-10,-10,-10,-20}
+    };
+
+    // ------------------ Rook PST (minimal) ------------------
+    const int rookPST[8][8] = {
+        { 0,  0,  5, 10, 10,  5,  0,  0},
+        { 0,  0,  5, 10, 10,  5,  0,  0},
+        { 0,  0,  5, 10, 10,  5,  0,  0},
+        { 5,  5, 10, 15, 15, 10,  5,  5},
+        { 5,  5, 10, 15, 15, 10,  5,  5},
+        {10, 10, 15, 20, 20, 15, 10, 10},
+        {10, 10, 15, 20, 20, 15, 10, 10},
+        { 0,  0,  5, 10, 10,  5,  0,  0}
+    };
+
+    // ------------------ Queen PST (minimal) ------------------
+    const int queenPST[8][8] = {
+        {-20,-10,-10, -5, -5,-10,-10,-20},
+        {-10,  0,  0,  0,  0,  0,  0,-10},
+        {-10,  0,  5,  5,  5,  5,  0,-10},
+        { -5,  0,  5, 10, 10,  5,  0, -5},
+        { -5,  0,  5, 10, 10,  5,  0, -5},
+        {-10,  0,  5,  5,  5,  5,  0,-10},
+        {-10,  0,  0,  0,  0,  0,  0,-10},
+        {-20,-10,-10, -5, -5,-10,-10,-20}
+    };
+
+    // ------------------ King PST (opening / middlegame) ------------------
+    const int kingOpeningPST[8][8] = {
+        {-30,-40,-40,-50,-50,-40,-40,-30},
+        {-30,-40,-40,-50,-50,-40,-40,-30},
+        {-30,-30,-35,-45,-45,-35,-30,-30},
+        {-20,-20,-25,-35,-35,-25,-20,-20},
+        {-10,-10,-20,-30,-30,-20,-10,-10},
+        { 10,  5,  0,-10,-10,  0,  5, 10},
+        { 20, 20, 10,  0,  0, 10, 20, 20},
+        { 30, 30, 20, 10, 10, 20, 30, 30}
+    };
+
+    // ------------------ King PST (endgame) ------------------
+    const int kingEndgamePST[8][8] = {
+        {-10,-10,-10,-10,-10,-10,-10,-10},
+        {-10,  0,  0,  0,  0,  0,  0,-10},
+        {-10,  0,  5,  5,  5,  5,  0,-10},
+        {-10,  0,  5, 10, 10,  5,  0,-10},
+        {-10,  0,  5, 10, 10,  5,  0,-10},
+        {-10,  0,  5,  5,  5,  5,  0,-10},
+        {-10,  0,  0,  0,  0,  0,  0,-10},
+        {-10,-10,-10,-10,-10,-10,-10,-10}
+    };
+
+
     // ------------------ Game Phase ------------------
     enum class GamePhase { OPENING, MIDDLEGAME, ENDGAME };
 
@@ -106,8 +179,8 @@ namespace
         return score;
     }
 
-    // ------------------ 2) Piece-Square Tables ------------------
-    int evaluatePieceSquare(const Board &board)
+       // ------------------ 2) Piece-Square Tables ------------------
+    int evaluatePieceSquare(const Board &board, GamePhase phase)
     {
         int score = 0;
 
@@ -119,15 +192,57 @@ namespace
 
             int r = rankOf(sq);
             int f = fileOf(sq);
+            int type = std::abs(piece);
 
-            switch (std::abs(piece))
+            switch (type)
             {
                 case PAWN:
                     if (piece > 0)
                         score += pawnPST[r][f];
                     else
-                        score -= pawnPST[7 - r][f]; // mirror for black
+                        score -= pawnPST[7 - r][f];
                     break;
+
+                case KNIGHT:
+                    if (piece > 0)
+                        score += knightPST[r][f];
+                    else
+                        score -= knightPST[7 - r][f];
+                    break;
+
+                case BISHOP:
+                    if (piece > 0)
+                        score += bishopPST[r][f];
+                    else
+                        score -= bishopPST[7 - r][f];
+                    break;
+
+                case ROOK:
+                    if (piece > 0)
+                        score += rookPST[r][f];
+                    else
+                        score -= rookPST[7 - r][f];
+                    break;
+
+                case QUEEN:
+                    if (piece > 0)
+                        score += queenPST[r][f];
+                    else
+                        score -= queenPST[7 - r][f];
+                    break;
+
+                case KING:
+                {
+                    // Use different table depending on game phase
+                    const int (*table)[8] =
+                        (phase == GamePhase::ENDGAME) ? kingEndgamePST : kingOpeningPST;
+
+                    if (piece > 0)
+                        score += table[r][f];
+                    else
+                        score -= table[7 - r][f];
+                    break;
+                }
 
                 default:
                     break;
@@ -136,6 +251,7 @@ namespace
 
         return score;
     }
+
 
     // ------------------ 3) Pawn Structure ------------------
     int evaluatePawnStructure(const Board &board)
@@ -387,7 +503,7 @@ int Engine::evaluate()
 
     int score = 0;
     score += evaluateMaterial(board);
-    score += evaluatePieceSquare(board);
+    score += evaluatePieceSquare(board, phase);
     score += evaluatePawnStructure(board);
     score += evaluatePieces(board);
     score += evaluatePatterns(board);
