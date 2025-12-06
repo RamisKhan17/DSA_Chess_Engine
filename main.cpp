@@ -32,12 +32,9 @@ int main()
         Board board;
 
         board.setStartingPosition();
-        board.setFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-        // board.setFEN("k7/8/8/8/8/8/1Q6/K7 b - - 0 1");
         Engine engine(board, ENGINE_DEPTH);
         // Test move generation
         std::vector<Move> legalMoves = board.generateLegalMoves();
-
         // Create and run GUI
         ChessGUI gui(board, engine, 1);
         gui.run();

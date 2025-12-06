@@ -54,6 +54,16 @@ Move Engine::getIterativeDeepeningMove()
 {
     nodesSearched = 0;
     int best_score = iterativeDeepening(searchDepth);
+    std::cout << "Best move: " << best_move.toAlgebraic()
+              << "(score: " << best_score << " )\n";
+    std::cout << "Nodes searched: " << nodesSearched << "\n";
+    return best_move;
+}
+
+Move Engine::getIterativeDeepeningAWMove()
+{
+    nodesSearched = 0;
+    int best_score = iterativeDeepeningAW(searchDepth);
     if (best_validity)
     {
         std::cout << "Best move: " << best_move.toAlgebraic()

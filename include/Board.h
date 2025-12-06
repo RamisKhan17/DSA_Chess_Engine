@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <random>
 
 /**
  * Piece encoding constants
@@ -46,6 +47,8 @@ const int CASTLING_WHITE_QUEENSIDE = 0x02;
 const int CASTLING_BLACK_KINGSIDE = 0x04;
 const int CASTLING_BLACK_QUEENSIDE = 0x08;
 
+// seed
+inline uint64_t seed = 42;
 /**
  * Move structure representing a chess move
  * Uses 0x88 square representation
@@ -138,12 +141,20 @@ private:
     static const int ROOK_DIRECTIONS[4];
     static const int KING_OFFSETS[8];
 
+    // Helper functions
+    uint64_t rand64(uint64_t &state);
+
 public:
     /**
      * Constructor - creates empty board
      * Time Complexity: O(1)
      */
     Board();
+    uint64_t hash; // Current Board hash value
+    uint64_t zobristPieceSquare[12][128];
+    uint64_t zobristCastling[16];
+    uint64_t zobristPassant[8];
+    uint64_t zobristSide;
 
     /**
      * Sets up the standard starting chess position
@@ -165,6 +176,15 @@ public:
      * @return FEN string representation
      */
     std::string getFEN() const;
+
+    // ==================== HASHING FUNCTIONS ========================
+
+    int pieceToZobristNumbering(int piece);
+    void initZobristArrays();
+    void setHash();
+    inline void hashUpdate(Move move);
+    void undoHashUpdate(Move move);
+    uint64_t moveHash(uint64_t currentHash, Move move);
 
     // ==================== CORE API FOR TEAMMATES ====================
 
@@ -271,11 +291,15 @@ public:
      */
     int getEnPassantSquare() const { return enPassantSquare; }
 
+    bool enemyPawnCanCaptureEP(int epSquare);
     /**
      * Gets half move clock
      * @return Number of half moves since last capture or pawn move
      */
-    int getHalfMoveClock() const { return halfMoveClock; }
+    int getHalfMoveClock() const
+    {
+        return halfMoveClock;
+    }
 
     /**
      * Gets full move number

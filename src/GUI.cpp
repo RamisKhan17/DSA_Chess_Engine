@@ -368,6 +368,7 @@ bool ChessGUI::tryMakeMove(int fromSquare, int toSquare)
         lastMoveFrom = fromSquare;
         lastMoveTo = toSquare;
 
+        cout << foundMove->toAlgebraic() << " ";
         board.makeMove(*foundMove);
         moveHistory.push_back(moveStr);
 

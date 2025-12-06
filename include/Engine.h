@@ -4,6 +4,7 @@
 #include "Board.h"
 #include <vector>
 #include <string>
+using namespace std;
 
 /**
  * Chess Engine - Interface for Search and Evaluation
@@ -17,12 +18,27 @@
  * The Move Generation module (Board class) is complete and ready for integration.
  */
 
-class EvalBoard
+static const int TT_SIZE = 65536;
+
+enum bound
 {
-public:
-    Board board;
-    int eval;
+    FLAG_EXACT,
+    FLAG_LOWERBOUND,
+    FLAG_UPPERBOUND
 };
+
+struct TTEntry
+{
+    uint64_t key;
+    int depth = -1;
+    int score;
+    bound flag;
+};
+
+inline int ttIndex(uint64_t hash)
+{
+    return hash & (TT_SIZE - 1);
+}
 
 class Engine
 {
@@ -32,6 +48,8 @@ private:
     int nodesSearched;
     Move best_move;
     bool best_validity = false;
+    int count = 0;
+    TTEntry TT[TT_SIZE];
 
 public:
     /**
@@ -57,6 +75,7 @@ public:
      */
     Move getAlphaBetaMove();
     Move getIterativeDeepeningMove();
+    Move getIterativeDeepeningAWMove();
     Move getBestMove();
     /**
      * Evaluates current position
@@ -82,8 +101,10 @@ public:
     int search(int depth);
     int alphaBeta(int depth, int alpha, int beta);
     int iterativeDeepening(int max_depth);
+    int iterativeDeepeningAW(int max_depth);
     int alphaBetaPlus(int depth, int max_depth, int alpha, int beta);
-    // EvalBoard alphaBetaBoard(int depth, EvalBoard alpha_board, EvalBoard beta_board);
+    int alphaBetaPlusPlus(int depth, int max_depth, int alpha, int beta);
+    int alphaBetaSigma(int depth, int alpha, int beta);
 
     /**
      * Gets number of nodes searched
