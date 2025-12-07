@@ -18,7 +18,7 @@
  * - Move history and game status display
  */
 
-int ENGINE_DEPTH = 4;
+int ENGINE_DEPTH = 5;
 
 int main()
 {
@@ -36,7 +36,7 @@ int main()
         // Test move generation
         std::vector<Move> legalMoves = board.generateLegalMoves();
         // Create and run GUI
-        ChessGUI gui(board, engine, 1);
+        ChessGUI gui(board, engine, 0);
         gui.run();
     }
     catch (const std::exception &e)

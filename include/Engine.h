@@ -18,7 +18,7 @@ using namespace std;
  * The Move Generation module (Board class) is complete and ready for integration.
  */
 
-static const int TT_SIZE = 65536;
+static const int TT_SIZE = 4194304; // ~1M entries (16x larger)
 
 enum bound
 {
@@ -49,7 +49,7 @@ private:
     Move best_move;
     bool best_validity = false;
     int count = 0;
-    TTEntry TT[TT_SIZE];
+    TTEntry *TT = new TTEntry[TT_SIZE];
 
 public:
     /**
@@ -97,14 +97,15 @@ public:
      *
      * TODO (Search Team): Implement this!
      */
+    inline int getPieceValue(int piece);
+    void sortMovesWithOrdering(std::vector<Move> &moves);
 
     int search(int depth);
     int alphaBeta(int depth, int alpha, int beta);
-    int iterativeDeepening(int max_depth);
-    int iterativeDeepeningAW(int max_depth);
     int alphaBetaPlus(int depth, int max_depth, int alpha, int beta);
-    int alphaBetaPlusPlus(int depth, int max_depth, int alpha, int beta);
-    int alphaBetaSigma(int depth, int alpha, int beta);
+    int TTAlphaBeta(int depth, int alpha, int beta);
+    int iterativeDeepening(int max_depth);
+    int TTIterativeDeepening(int max_depth);
 
     /**
      * Gets number of nodes searched

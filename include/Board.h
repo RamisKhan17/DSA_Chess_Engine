@@ -85,7 +85,7 @@ struct Move
 
 inline bool operator==(const Move &moveA, const Move &moveB)
 {
-    return moveA.from == moveB.from && moveA.to == moveB.to && moveA.piece == moveB.piece && moveA.capturedPiece == moveB.capturedPiece && moveA.promotionPiece == moveB.promotionPiece && moveA.flags == moveB.flags && moveA.score == moveB.score;
+    return moveA.from == moveB.from && moveA.to == moveB.to && moveA.piece == moveB.piece && moveA.capturedPiece == moveB.capturedPiece && moveA.promotionPiece == moveB.promotionPiece && moveA.flags == moveB.flags;
 }
 
 /**
@@ -195,6 +195,7 @@ public:
      * @return Vector of all legal moves
      */
     std::vector<Move> generateLegalMoves();
+    std::vector<Move> generatePseudoLegalMoves() const;
 
     /**
      * Generates legal moves from a specific square
@@ -320,7 +321,6 @@ private:
      * Generates all pseudo-legal moves (doesn't check for check)
      * Time Complexity: O(n*m)
      */
-    std::vector<Move> generatePseudoLegalMoves() const;
 
     /**
      * Generate moves for specific piece types
@@ -364,6 +364,23 @@ private:
      * Time Complexity: O(1)
      */
     void updateCastlingRights(const Move &move);
+    // Insufficient material and repetition helpers
+    bool isInsufficientMaterial() const;
+    bool isThreefoldRepetition() const;
+    
+private:
+    // Piece list optimization: quick access to occupied squares
+    std::vector<int> pieceList; // list of squares (0x88) that currently hold a piece
+    void rebuildPieceList();
+    void addPieceSquare(int square);
+    void removePieceSquare(int square);
+    void movePieceSquare(int from, int to);
+
+public:
+    /**
+     * Returns a const reference to the current list of piece squares
+     */
+    const std::vector<int> &getPieceList() const { return pieceList; }
 };
 
 // ==================== 0x88 HELPER FUNCTIONS ====================

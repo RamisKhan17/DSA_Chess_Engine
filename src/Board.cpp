@@ -6,6 +6,38 @@
 
 using namespace std;
 
+// Helper: piece value lookup used for MVV-LVA ordering
+static inline int getPieceValue(int piece)
+{
+    switch (std::abs(piece))
+    {
+    case 1:
+        return 100; // Pawn
+    case 2:
+        return 320; // Knight
+    case 3:
+        return 330; // Bishop
+    case 4:
+        return 500; // Rook
+    case 5:
+        return 900; // Queen
+    case 6:
+        return 20000; // King (very high)
+    default:
+        return 0;
+    }
+}
+
+// Helper: Sort moves with MVV-LVA and TT prioritization
+// Prioritizes: TT hits > captures (MVV-LVA) > promotions > quiet moves
+struct TTEntry
+{
+    uint64_t key;
+    int depth;
+    int score;
+    int flag;
+};
+
 // Static member initialization - precomputed move offsets
 const int Board::KNIGHT_OFFSETS[8] = {-33, -31, -18, -14, 14, 18, 31, 33};
 const int Board::BISHOP_DIRECTIONS[4] = {-17, -15, 15, 17};
@@ -1095,8 +1127,98 @@ bool Board::isDraw() const
     if (halfMoveClock >= 100)
         return true;
 
-    // TODO: Implement insufficient material detection
-    // TODO: Implement threefold repetition
+    // Insufficient material
+    if (isInsufficientMaterial())
+        return true;
+
+    // Threefold repetition
+    if (isThreefoldRepetition())
+        return true;
+
+    return false;
+}
+
+// Helper: detect situations where checkmate is impossible with current material
+bool Board::isInsufficientMaterial() const
+{
+    int pawnCount = 0;
+    int majorCount = 0; // rooks or queens
+    int minorCount = 0; // knights or bishops
+    int bishopSquares[2] = {-1, -1};
+    int bishopFound = 0;
+
+    for (int sq = 0; sq < 128; ++sq)
+    {
+        if (sq & 0x88)
+            continue;
+
+        int p = board[sq];
+        if (p == EMPTY)
+            continue;
+
+        int absP = std::abs(p);
+        if (absP == 1)
+            ++pawnCount;
+        else if (absP == 2)
+            ++minorCount; // knight
+        else if (absP == 3)
+        {
+            ++minorCount; // bishop
+            if (bishopFound < 2)
+                bishopSquares[bishopFound++] = sq;
+        }
+        else if (absP == 4 || absP == 5)
+            ++majorCount; // rook or queen
+    }
+
+    // If there are any pawns or any major pieces, material is sufficient
+    if (pawnCount > 0 || majorCount > 0)
+        return false;
+
+    // Only kings
+    if (minorCount == 0)
+        return true;
+
+    // Single minor piece vs lone king (K+B vs K or K+N vs K)
+    if (minorCount == 1)
+        return true;
+
+    // Two bishops only (one per side or both on same side): draw if bishops are on same color
+    if (minorCount == 2 && bishopFound == 2)
+    {
+        auto squareColor = [](int sq)
+        {
+            int f = sq & 7;
+            int r = sq >> 4;
+            return (f + r) & 1; // 0 = dark, 1 = light
+        };
+
+        if (squareColor(bishopSquares[0]) == squareColor(bishopSquares[1]))
+            return true;
+    }
+
+    // Otherwise, consider material sufficient
+    return false;
+}
+
+// Helper: detect threefold repetition by undoing moves on a copy
+bool Board::isThreefoldRepetition() const
+{
+    Board temp = *this; // make a copy we can undo on
+    uint64_t key = temp.hash;
+    int occurrences = 1; // current position
+
+    // Walk backwards through history by undoing moves on the temp board
+    while (!temp.moveHistory.empty())
+    {
+        temp.undoMove();
+        if (temp.hash == key)
+        {
+            ++occurrences;
+            if (occurrences >= 3)
+                return true;
+        }
+    }
 
     return false;
 }
