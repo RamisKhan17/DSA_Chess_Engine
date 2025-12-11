@@ -37,6 +37,28 @@ namespace
         {0, 0, 0, 0, 0, 0, 0, 0}        // promotion rank (not on board yet)
     };
 
+    // ------------------ Pawn PSTs: Middlegame (MG) and Endgame (EG) ------------------
+    // MG encourages central advances from the start; EG rewards advanced/passed pawns
+    const int pawnMGPST[8][8] = {
+        {0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 5, 10, 10, 5, 0, 0},
+        {5, 5, 10, 15, 15, 10, 5, 5},
+        {5, 10, 15, 20, 20, 15, 10, 5},
+        {0, 5, 10, 15, 15, 10, 5, 0},
+        {0, 0, 0, 5, 5, 0, 0, 0},
+        {0, 0, 0, 10, 10, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0}};
+
+    const int pawnEGPST[8][8] = {
+        {0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 5, 5, 0, 0, 0},
+        {0, 5, 10, 15, 15, 10, 5, 0},
+        {5, 10, 20, 30, 30, 20, 10, 5},
+        {10, 20, 30, 40, 40, 30, 20, 10},
+        {20, 30, 40, 50, 50, 40, 30, 20},
+        {40, 50, 60, 80, 80, 60, 50, 40},
+        {0, 0, 0, 0, 0, 0, 0, 0}};
+
     // ------------------ Knight PST (minimal) ------------------
     const int knightPST[8][8] = {
         {-30, -20, -10, -10, -10, -10, -20, -30},
@@ -110,6 +132,47 @@ namespace
         MIDDLEGAME,
         ENDGAME
     };
+
+    // ------------------ Helper: phase interpolation weight ------------------
+    // returns a value in [0,1] where 1.0 = full middlegame/opening, 0.0 = full endgame
+    double computePhaseFactor(const Board &board)
+    {
+        // We base phase on remaining non-pawn material (queens, rooks, bishops, knights)
+        const double max_phase_material = 6400.0; // heuristic maximum at game start
+        double sum = 0.0;
+        for (int sq = 0; sq < 128; ++sq)
+        {
+            if (sq & 0x88)
+                continue;
+            int p = board.getPiece(sq);
+            if (p == EMPTY)
+                continue;
+            switch (std::abs(p))
+            {
+            case QUEEN:
+                sum += QUEEN_VALUE;
+                break;
+            case ROOK:
+                sum += ROOK_VALUE;
+                break;
+            case BISHOP:
+                sum += BISHOP_VALUE;
+                break;
+            case KNIGHT:
+                sum += KNIGHT_VALUE;
+                break;
+            default:
+                break;
+            }
+        }
+
+        double factor = sum / max_phase_material; // more material -> more MG
+        if (factor < 0.0)
+            factor = 0.0;
+        if (factor > 1.0)
+            factor = 1.0;
+        return factor;
+    }
 
     GamePhase detectGamePhase(const Board &board)
     {

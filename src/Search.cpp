@@ -33,6 +33,16 @@ int Engine::search(int depth)
 int Engine::alphaBeta(int depth, int alpha, int beta)
 {
     nodesSearched++;
+    if ((moveTime != -1) && (nodesSearched & (remainingTime / 275)) == 0)
+    {
+        if (chrono::duration_cast<std::chrono::milliseconds>(
+                chrono::steady_clock::now() - startTime)
+                .count() >= moveTime)
+        {
+            searchCancelled = true;
+            return alpha; // return best known bound, NOT 0
+        }
+    }
     if (board.isCheckmate())
         return -100000 + (searchDepth - depth); // Favor quicker mates
     if (board.isStalemate() || board.isDraw())
@@ -59,45 +69,19 @@ int Engine::alphaBeta(int depth, int alpha, int beta)
     return alpha;
 }
 
-int Engine::alphaBetaPlus(int depth, int max_depth, int alpha, int beta)
-{
-    nodesSearched++;
-    if (board.isCheckmate())
-        return -100000 + (max_depth - depth); // Favor quicker mates
-
-    if (board.isStalemate() || board.isDraw())
-        return 0;
-
-    if (depth <= 0)
-        return evaluate();
-
-    vector<Move> moves = board.generateLegalMoves();
-    if (best_validity)
-    {
-        auto it = std::find(moves.begin(), moves.end(), best_move);
-        if (it != moves.end())
-            swap(moves[0], *it);
-    }
-    for (Move &move : moves)
-    {
-        board.makeMove(move);
-        int evaluation = -alphaBetaPlus(depth - 1, max_depth, -beta, -alpha);
-        board.undoMove();
-        if (evaluation >= beta)
-            return beta;
-        if (evaluation > alpha)
-        {
-            alpha = evaluation;
-            if (depth == max_depth)
-                best_move = move;
-        }
-    }
-    return alpha;
-}
-
 int Engine::TTAlphaBeta(int depth, int alpha, int beta)
 {
     nodesSearched++;
+    if ((nodesSearched & (remainingTime / 275)) == 0)
+    {
+        if (chrono::duration_cast<std::chrono::milliseconds>(
+                chrono::steady_clock::now() - startTime)
+                .count() >= moveTime)
+        {
+            searchCancelled = true;
+            return alpha; // return best known bound, NOT 0
+        }
+    }
     int originalAlpha = alpha;
     TTEntry &entry = TT[board.hash & (TT_SIZE - 1)];
     if (entry.key == board.hash && entry.depth >= depth)
@@ -156,26 +140,13 @@ int Engine::TTAlphaBeta(int depth, int alpha, int beta)
     return maxEval;
 }
 
-int Engine::iterativeDeepening(int max_depth)
-{
-    int best_score = -1000000;
-    best_validity = false;
-    for (int i = 1; i <= max_depth; i++)
-    {
-        best_score = alphaBetaPlus(i, i, -1000000, 1000000);
-        best_validity = true;
-    }
-
-    return best_score;
-}
-
-int Engine::TTIterativeDeepening(int maxDepth)
+int Engine::iterativeDeepening(int maxDepth)
 {
     int bestScore = std::numeric_limits<int>::min() + 1;
 
+    nodesSearched = 0;
     for (int depth = 1; depth <= maxDepth; depth++)
     {
-        nodesSearched = 0;
         std::vector<Move> legalMoves = board.generateLegalMoves();
         if (legalMoves.empty())
             return 0; // No legal moves
@@ -189,10 +160,55 @@ int Engine::TTIterativeDeepening(int maxDepth)
 
         for (Move &move : legalMoves)
         {
-            // cout << move.toAlgebraic() << " ";
+            board.makeMove(move);
+            int score = -alphaBeta(depth - 1, -beta, -alpha);
+            board.undoMove();
+
+            if (searchCancelled)
+                break;
+
+            if (score > currentBestScore)
+            {
+                currentBestScore = score;
+                best_move = move;
+            }
+
+            if (score > alpha)
+                alpha = score;
+        }
+        if (searchCancelled)
+            break;
+        bestScore = currentBestScore; // store best score at this depth
+    }
+
+    return bestScore;
+}
+
+int Engine::TTIterativeDeepening(int maxDepth)
+{
+    int bestScore = std::numeric_limits<int>::min() + 1;
+
+    nodesSearched = 0;
+    for (int depth = 1; depth <= maxDepth; depth++)
+    {
+        std::vector<Move> legalMoves = board.generateLegalMoves();
+        if (legalMoves.empty())
+            return 0;
+
+        sortMovesWithOrdering(legalMoves);
+
+        int alpha = std::numeric_limits<int>::min() + 1;
+        int beta = std::numeric_limits<int>::max();
+        int currentBestScore = std::numeric_limits<int>::min() + 1;
+
+        for (Move &move : legalMoves)
+        {
             board.makeMove(move);
             int score = -TTAlphaBeta(depth - 1, -beta, -alpha);
             board.undoMove();
+
+            if (searchCancelled)
+                break;
 
             if (score > currentBestScore)
             {
@@ -204,7 +220,96 @@ int Engine::TTIterativeDeepening(int maxDepth)
                 alpha = score;
         }
 
-        bestScore = currentBestScore; // store best score at this depth
+        if (searchCancelled)
+            break;
+
+        bestScore = currentBestScore;
+    }
+
+    return bestScore;
+}
+
+int Engine::TTIterativeDeepeningAW(int maxDepth)
+{
+    int bestScore = 0;
+    nodesSearched = 0;
+
+    for (int depth = 1; depth <= maxDepth; depth++)
+    {
+        std::vector<Move> legalMoves = board.generateLegalMoves();
+        if (legalMoves.empty())
+            return 0;
+
+        sortMovesWithOrdering(legalMoves);
+
+        int delta = 50;
+        int alpha, beta;
+
+        if (depth == 1)
+        {
+            alpha = std::numeric_limits<int>::min() + 1;
+            beta = std::numeric_limits<int>::max();
+        }
+        else
+        {
+            alpha = bestScore - delta;
+            beta = bestScore + delta;
+        }
+
+        int currentBestScore;
+
+        while (true) // aspiration re-search loop
+        {
+            int localAlpha = alpha;
+            int localBeta = beta;
+
+            currentBestScore = std::numeric_limits<int>::min() + 1;
+
+            for (Move &move : legalMoves)
+            {
+                board.makeMove(move);
+                int score = -TTAlphaBeta(depth - 1, -localBeta, -localAlpha);
+                board.undoMove();
+
+                if (searchCancelled)
+                    break;
+
+                if (score > currentBestScore)
+                {
+                    currentBestScore = score;
+                    best_move = move;
+                }
+
+                if (score > localAlpha)
+                    localAlpha = score;
+
+                if (localAlpha >= localBeta) // fail-high cutoff
+                    break;
+            }
+
+            if (searchCancelled)
+                break;
+
+            // --- Aspiration window checks ---
+            if (depth > 1 && currentBestScore <= alpha)
+            {
+                alpha -= delta;
+                delta *= 2;
+                continue; // redo search
+            }
+
+            if (depth > 1 && currentBestScore >= beta)
+            {
+                beta += delta;
+                delta *= 2;
+                continue; // redo search
+            }
+
+            break; // window success → exit loop
+        }
+        if (searchCancelled)
+            break;
+        bestScore = currentBestScore;
     }
 
     return bestScore;

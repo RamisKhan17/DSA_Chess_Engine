@@ -4,6 +4,7 @@
 #include "Board.h"
 #include <vector>
 #include <string>
+#include <chrono>
 using namespace std;
 
 /**
@@ -27,6 +28,15 @@ enum bound
     FLAG_UPPERBOUND
 };
 
+enum searchType
+{
+    STANDARD_SEARCH,
+    ALPHA_BETA,
+    ITERATIVE_DEEPENING,
+    TT_ITERATIVE_DEEPENING,
+    TT_ITERATIVE_DEEPENING_AW
+};
+
 struct TTEntry
 {
     uint64_t key;
@@ -44,8 +54,14 @@ class Engine
 {
 private:
     Board &board;
+    searchType searchFunc;
     int searchDepth;
     int nodesSearched;
+    long long remainingTime;
+    int timeIncrement;
+    long long moveTime;
+    chrono::steady_clock::time_point startTime;
+    bool searchCancelled = false;
     Move best_move;
     bool best_validity = false;
     int count = 0;
@@ -56,7 +72,7 @@ public:
      * Constructor
      * @param depth - Default search depth
      */
-    Engine(Board &board, int depth = 4);
+    Engine(Board &board, searchType searchFunc, int depth = 4, int startingTime = 200000, int timeIncrement = 0);
     /**
      * Sets the board position
      * @param fen - FEN string of position
@@ -73,9 +89,9 @@ public:
      * TODO (Evaluation Team): Implement position evaluation
      * TODO (Optimization Team): Add transposition tables and move ordering
      */
+    Move getStandardSearchMove();
     Move getAlphaBetaMove();
     Move getIterativeDeepeningMove();
-    Move getIterativeDeepeningAWMove();
     Move getBestMove();
     /**
      * Evaluates current position
@@ -102,10 +118,10 @@ public:
 
     int search(int depth);
     int alphaBeta(int depth, int alpha, int beta);
-    int alphaBetaPlus(int depth, int max_depth, int alpha, int beta);
     int TTAlphaBeta(int depth, int alpha, int beta);
     int iterativeDeepening(int max_depth);
     int TTIterativeDeepening(int max_depth);
+    int TTIterativeDeepeningAW(int max_depth);
 
     /**
      * Gets number of nodes searched

@@ -367,10 +367,11 @@ private:
     // Insufficient material and repetition helpers
     bool isInsufficientMaterial() const;
     bool isThreefoldRepetition() const;
-    
+
 private:
     // Piece list optimization: quick access to occupied squares
     std::vector<int> pieceList; // list of squares (0x88) that currently hold a piece
+    int pieceIndex[128];        // -1 if square not in pieceList, else index into pieceList for O(1) removal
     void rebuildPieceList();
     void addPieceSquare(int square);
     void removePieceSquare(int square);

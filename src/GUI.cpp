@@ -7,7 +7,7 @@ using namespace std::chrono;
 
 // ==================== CONSTRUCTOR ====================
 
-ChessGUI::ChessGUI(Board &b, Engine &e, int enginePlay) : board(b), engine(e), engineTurn(enginePlay)
+ChessGUI::ChessGUI(Board &b, int enginePlay, Engine &e1, Engine &e2) : board(b), engine1(e1), engine2(e2), engineTurn(enginePlay)
 {
     // Create window with resize support
     window.create(sf::VideoMode({WINDOW_WIDTH, WINDOW_HEIGHT}),
@@ -101,22 +101,48 @@ void ChessGUI::run()
 {
     while (window.isOpen())
     {
-        handleEvents();
-        render();
-        if (engineTurn > 0)
+        if (engineTurn != 2)
         {
+            handleEvents();
+            render();
+            if (engineTurn > 0)
+            {
+                auto start = high_resolution_clock::now();
+
+                makeEngineMove(engine1);
+                auto end = high_resolution_clock::now();
+                auto duration = duration_cast<milliseconds>(end - start);
+
+                std::cout << "Time taken: " << duration.count() << " ms\n";
+                engineTurn = -engineTurn;
+            }
+        }
+        else
+        {
+            render();
             auto start = high_resolution_clock::now();
 
-            makeEngineMove();
+            makeEngineMove(engine1);
             auto end = high_resolution_clock::now();
             auto duration = duration_cast<milliseconds>(end - start);
 
-            std::cout << "Time taken: " << duration.count() << " ms\n";
-            engineTurn = -engineTurn;
+            cout << "Time taken: " << duration.count() << " ms\n";
+
+            render();
+
+            start = high_resolution_clock::now();
+
+            makeEngineMove(engine2);
+            end = high_resolution_clock::now();
+            duration = duration_cast<milliseconds>(end - start);
+
+            cout << "Time taken: " << duration.count() << " ms\n";
+
+            render();
         }
     }
 }
-void ChessGUI::makeEngineMove()
+void ChessGUI::makeEngineMove(Engine &engine)
 {
     if (gameOver)
         return;

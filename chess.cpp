@@ -18,8 +18,6 @@
  * - Move history and game status display
  */
 
-int ENGINE_DEPTH = 5;
-
 int main()
 {
     std::cout << "Chess Engine - DSA Project\n";
@@ -32,11 +30,12 @@ int main()
         Board board;
 
         board.setStartingPosition();
-        Engine engine(board, ENGINE_DEPTH);
+        Engine e1 = Engine(board, ITERATIVE_DEEPENING);
+        Engine e2 = Engine(board, ITERATIVE_DEEPENING);
         // Test move generation
         std::vector<Move> legalMoves = board.generateLegalMoves();
         // Create and run GUI
-        ChessGUI gui(board, engine, 0);
+        ChessGUI gui(board, 0, e1, e2);
         gui.run();
     }
     catch (const std::exception &e)

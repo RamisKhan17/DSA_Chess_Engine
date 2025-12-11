@@ -24,7 +24,9 @@ class ChessGUI
 {
 private:
     Board &board;
-    Engine &engine;
+    Engine &engine1;
+    Engine &engine2;
+    int noEngines = 0;
     int engineTurn = 0;
     sf::RenderWindow window;
 
@@ -82,7 +84,7 @@ public:
      * Constructor
      * @param b - Reference to Board object
      */
-    ChessGUI(Board &b, Engine &e, int enginePlay);
+    ChessGUI(Board &b, int enginePlay, Engine &e1, Engine &e2);
     /**
      * Main game loop - runs until window is closed
      * Time Complexity: O(∞) - runs continuously
@@ -98,7 +100,7 @@ private:
      */
     void loadResources();
 
-    void makeEngineMove();
+    void makeEngineMove(Engine &engine);
     /**
      * Initializes color scheme
      */
