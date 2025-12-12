@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <thread>
 #include <chrono>
 using namespace std;
 using namespace chrono;
@@ -100,7 +101,7 @@ void ChessGUI::run()
             handleEvents();
             render();
             updateTimers();
-            if (engineTurn > 0)
+            if (!board.isCheckmate() && !board.isDraw() && engineTurn > 0)
             {
                 int movingSide = board.getSideToMove();
                 auto start = steady_clock::now();
@@ -110,7 +111,7 @@ void ChessGUI::run()
                 auto duration = duration_cast<milliseconds>(end - start);
 
                 handleMoveTiming(movingSide, duration.count());
-cout << "Time taken: " << duration.count() << " ms\n";
+                cout << "Time taken: " << duration.count() << " ms\n";
                 engineTurn = -engineTurn;
             }
         }
@@ -118,30 +119,37 @@ cout << "Time taken: " << duration.count() << " ms\n";
         {
             render();
             updateTimers();
-            int movingSide = board.getSideToMove();
-            auto start = steady_clock::now();
 
-            makeEngineMove(engine1);
-            auto end = steady_clock::now();
-            auto duration = duration_cast<milliseconds>(end - start);
+            if (!board.isCheckmate() && !board.isDraw())
+            {
+                int movingSide = board.getSideToMove();
+                auto start = steady_clock::now();
 
-            handleMoveTiming(movingSide, duration.count());
-            cout << "Time taken: " << duration.count() << " ms\n";
+                makeEngineMove(engine1);
+                auto end = steady_clock::now();
+                auto duration = duration_cast<milliseconds>(end - start);
 
-            render();
-            updateTimers();
+                handleMoveTiming(movingSide, duration.count());
+                cout << "Time taken: " << duration.count() << " ms\n";
 
-            movingSide = board.getSideToMove();
-            start = steady_clock::now();
+                render();
+                updateTimers();
 
-            makeEngineMove(engine2);
-            end = steady_clock::now();
-            duration = duration_cast<milliseconds>(end - start);
+                movingSide = board.getSideToMove();
+                start = steady_clock::now();
 
-            handleMoveTiming(movingSide, duration.count());
-            cout << "Time taken: " << duration.count() << " ms\n";
+                makeEngineMove(engine2);
+                end = steady_clock::now();
+                duration = duration_cast<milliseconds>(end - start);
 
-            render();
+                handleMoveTiming(movingSide, duration.count());
+                cout << "Time taken: " << duration.count() << " ms\n";
+            }
+            else
+            {
+                this_thread::sleep_for(std::chrono::seconds(2));
+                window.close();
+            }
         }
     }
 }
@@ -152,12 +160,11 @@ void ChessGUI::makeEngineMove(Engine &engine)
     Move engineMove = engine.getBestMove();
     lastMoveFrom = engineMove.from;
     lastMoveTo = engineMove.to;
-string moveStr = formatMove(engineMove, board.getFullMoveNumber());
+    string moveStr = formatMove(engineMove, board.getFullMoveNumber());
     board.makeMove(engineMove);
     moveHistory.push_back(moveStr);
     updateGameState();
 }
-
 
 void ChessGUI::handleEvents()
 {
@@ -389,7 +396,6 @@ int ChessGUI::selectPromotionPiece()
     int side = board.getSideToMove();
     return (side == 0) ? WHITE_QUEEN : BLACK_QUEEN;
 }
-
 
 void ChessGUI::render()
 {
@@ -800,7 +806,7 @@ bool ChessGUI::handlePromotionClick(int x, int y)
         Move selectedMove = pendingPromotionMoves[pieceIndex];
 
         // Store move for history
-string moveStr = formatMove(selectedMove, board.getFullMoveNumber());
+        string moveStr = formatMove(selectedMove, board.getFullMoveNumber());
 
         // Make the move
         lastMoveFrom = selectedMove.from;
@@ -824,7 +830,6 @@ string moveStr = formatMove(selectedMove, board.getFullMoveNumber());
 void ChessGUI::drawCapturedPieces()
 {
 }
-
 
 int ChessGUI::screenToSquare(int x, int y) const
 {
@@ -864,7 +869,6 @@ sf::Vector2f ChessGUI::squareCenter(int square88) const
     return sf::Vector2f(topLeft.x + currentSquareSize / 2, topLeft.y + currentSquareSize / 2);
 }
 
-
 void ChessGUI::updateGameState()
 {
     checkGameOver();
@@ -898,7 +902,7 @@ void ChessGUI::clearSelection()
 
 string ChessGUI::formatMove(const Move &move, int moveNumber) const
 {
-ostringstream oss;
+    ostringstream oss;
 
     // Move number for white moves
     if (board.getSideToMove() == 0)
@@ -985,7 +989,7 @@ string ChessGUI::formatTime(long long ms) const
     long long minutes = totalSeconds / 60;
     long long seconds = totalSeconds % 60;
 
-ostringstream oss;
+    ostringstream oss;
     oss << setw(2) << setfill('0') << minutes
         << ":" << setw(2) << setfill('0') << seconds;
     return oss.str();

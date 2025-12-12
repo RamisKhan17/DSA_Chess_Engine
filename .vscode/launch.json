@@ -5,7 +5,7 @@
       "name": "Debug Chess Engine",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/ChessEngine.exe",
+      "program": "${workspaceFolder}/chess.exe",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",

@@ -4,7 +4,7 @@
         {
             "label": "Compile Chess Engine",
             "type": "shell",
-            "command": "${workspaceFolder}/compile.bat",
+            "command": "${workspaceFolder}/chess.bat",
             "group": {
                 "kind": "build",
                 "isDefault": false

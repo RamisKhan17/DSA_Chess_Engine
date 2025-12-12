@@ -237,6 +237,7 @@ int Engine::TTIterativeDeepeningAW(int maxDepth)
     for (int depth = 1; depth <= maxDepth; depth++)
     {
         vector<Move> legalMoves = board.generateLegalMoves();
+        Move prevBestMove = best_move;
         if (legalMoves.empty())
             return 0;
 

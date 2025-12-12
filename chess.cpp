@@ -12,10 +12,10 @@ int main(int argc, char **argv)
     cout << "==========================\n\n";
     cout << "Initializing chess engine...\n";
 
-    int START_TIME = 60000;    // In milliseconds
-    int TIME_INCREMENT = 1000; // In milliseconds
-    int MATCH_TYPE = -1;
-    int MAX_DEPTH = 4;
+    int START_TIME = 10000;   // In milliseconds
+    int TIME_INCREMENT = 500; // In milliseconds
+    int MATCH_TYPE = 1;
+    int MAX_DEPTH = 5;
     searchType SEARCH_FUNC = TT_ITERATIVE_DEEPENING_AW;
 
     for (int i = 1; i < argc; i++)
