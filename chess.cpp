@@ -12,9 +12,9 @@ int main(int argc, char **argv)
     cout << "==========================\n\n";
     cout << "Initializing chess engine...\n";
 
-    int START_TIME = 10000;   // In milliseconds
-    int TIME_INCREMENT = 500; // In milliseconds
-    int MATCH_TYPE = 1;
+    int START_TIME = 60000; // In milliseconds
+    int TIME_INCREMENT = 0; // In milliseconds
+    int MATCH_TYPE = -1;
     int MAX_DEPTH = 5;
     searchType SEARCH_FUNC = TT_ITERATIVE_DEEPENING_AW;
 
@@ -26,8 +26,8 @@ int main(int argc, char **argv)
         {
             cout << "Chess Engine Command Line Options:\n\n";
             cout << "  -t <ms>   Set start time per side (default: 60000 ms)\n";
-            cout << "  -i <ms>   Set increment time per move (default: 1000 ms)\n";
-            cout << "  -d <n>    Set maximum search depth (default: 4)\n";
+            cout << "  -i <ms>   Set increment time per move (default: 0 ms)\n";
+            cout << "  -d <n>    Set maximum search depth (default: 5)\n";
             cout << "  -m <n>    Match type (default: -1)\n";
             cout << "            0 = Human vs Human\n";
             cout << "            1 = Engine plays White\n";
