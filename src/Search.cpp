@@ -58,6 +58,7 @@ int Engine::alphaBeta(int depth, int alpha, int beta)
         board.makeMove(move);
         int evaluation = -alphaBeta(depth - 1, -beta, -alpha);
         board.undoMove();
+
         if (evaluation >= beta)
             return beta;
 
@@ -113,6 +114,8 @@ int Engine::TTAlphaBeta(int depth, int alpha, int beta)
         board.makeMove(move);
         int evaluation = -TTAlphaBeta(depth - 1, -beta, -alpha);
         board.undoMove();
+        if (searchCancelled)
+            break;
 
         if (evaluation > maxEval)
         {
@@ -123,6 +126,8 @@ int Engine::TTAlphaBeta(int depth, int alpha, int beta)
         if (alpha >= beta)
             break;
     }
+    if (searchCancelled)
+        return maxEval;
 
     entry.depth = depth;
     entry.key = board.hash;
@@ -145,7 +150,7 @@ int Engine::iterativeDeepening(int maxDepth)
     nodesSearched = 0;
     for (int depth = 1; depth <= maxDepth; depth++)
     {
-vector<Move> legalMoves = board.generateLegalMoves();
+        vector<Move> legalMoves = board.generateLegalMoves();
         if (legalMoves.empty())
             return 0;
 
@@ -188,7 +193,7 @@ int Engine::TTIterativeDeepening(int maxDepth)
     nodesSearched = 0;
     for (int depth = 1; depth <= maxDepth; depth++)
     {
-vector<Move> legalMoves = board.generateLegalMoves();
+        vector<Move> legalMoves = board.generateLegalMoves();
         if (legalMoves.empty())
             return 0;
 
@@ -216,10 +221,8 @@ vector<Move> legalMoves = board.generateLegalMoves();
             if (score > alpha)
                 alpha = score;
         }
-
         if (searchCancelled)
             break;
-
         bestScore = currentBestScore;
     }
 
@@ -233,7 +236,7 @@ int Engine::TTIterativeDeepeningAW(int maxDepth)
 
     for (int depth = 1; depth <= maxDepth; depth++)
     {
-vector<Move> legalMoves = board.generateLegalMoves();
+        vector<Move> legalMoves = board.generateLegalMoves();
         if (legalMoves.empty())
             return 0;
 
@@ -254,14 +257,14 @@ vector<Move> legalMoves = board.generateLegalMoves();
         }
 
         int currentBestScore;
-
+        Move currentBestMove;
         while (true)
         {
             int localAlpha = alpha;
             int localBeta = beta;
 
             currentBestScore = numeric_limits<int>::min() + 1;
-
+            currentBestMove = legalMoves[0];
             for (Move &move : legalMoves)
             {
                 board.makeMove(move);
@@ -274,7 +277,7 @@ vector<Move> legalMoves = board.generateLegalMoves();
                 if (score > currentBestScore)
                 {
                     currentBestScore = score;
-                    best_move = move;
+                    currentBestMove = move;
                 }
 
                 if (score > localAlpha)
@@ -306,6 +309,7 @@ vector<Move> legalMoves = board.generateLegalMoves();
         if (searchCancelled)
             break;
         bestScore = currentBestScore;
+        best_move = currentBestMove;
     }
 
     return bestScore;
