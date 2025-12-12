@@ -2,21 +2,9 @@
 #include "include/Engine.h"
 #include "include/GUI.h"
 #include <iostream>
+using namespace std;
 
-/**
- * Chess Engine - DSA Project
- *
- * This is the main entry point for the chess engine application.
- * It initializes the board and GUI, then runs the main game loop.
- *
- * Features:
- * - 0x88 board representation for efficient move generation
- * - Complete move generation including special moves (castling, en passant, promotion)
- * - Legal move filtering with check detection
- * - SFML-based graphical user interface
- * - Drag and drop piece movement
- * - Move history and game status display
- */
+// Main entry point for the chess engine
 
 int main(int argc, char **argv)
 {
@@ -32,7 +20,7 @@ int main(int argc, char **argv)
 
     for (int i = 1; i < argc; i++)
     {
-        std::string arg = argv[i];
+        string arg = argv[i];
 
         if (arg == "-h")
         {
@@ -92,21 +80,17 @@ int main(int argc, char **argv)
 
     try
     {
-        // Create board and set starting position
         Board board;
-
         board.setStartingPosition();
         Engine e1 = Engine(board, SEARCH_FUNC, MAX_DEPTH, START_TIME, TIME_INCREMENT);
         Engine e2 = Engine(board, SEARCH_FUNC, MAX_DEPTH, START_TIME, TIME_INCREMENT);
-        // Test move generation
         vector<Move> legalMoves = board.generateLegalMoves();
-        // Create and run GUI
         ChessGUI gui(board, MATCH_TYPE, e1, e2, START_TIME, TIME_INCREMENT);
         gui.run();
     }
-    catch (const std::exception &e)
+    catch (const exception &e)
     {
-        cerr << "Error: " << e.what() << std::endl;
+        cerr << "Error: " << e.what() << endl;
         return 1;
     }
 

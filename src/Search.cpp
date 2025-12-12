@@ -9,7 +9,7 @@ int Engine::search(int depth)
 {
     nodesSearched++;
     if (board.isCheckmate())
-        return -100000 + (searchDepth - depth); // Favor quicker mates
+        return -100000 + (searchDepth - depth);
 
     if (board.isStalemate() || board.isDraw())
         return 0;
@@ -35,16 +35,16 @@ int Engine::alphaBeta(int depth, int alpha, int beta)
     nodesSearched++;
     if ((moveTime != -1) && (nodesSearched & (remainingTime / 275)) == 0)
     {
-        if (chrono::duration_cast<std::chrono::milliseconds>(
+        if (chrono::duration_cast<chrono::milliseconds>(
                 chrono::steady_clock::now() - startTime)
                 .count() >= moveTime)
         {
             searchCancelled = true;
-            return alpha; // return best known bound, NOT 0
+            return alpha;
         }
     }
     if (board.isCheckmate())
-        return -100000 + (searchDepth - depth); // Favor quicker mates
+        return -100000 + (searchDepth - depth);
     if (board.isStalemate() || board.isDraw())
         return 0;
     if (depth <= 0)
@@ -74,12 +74,12 @@ int Engine::TTAlphaBeta(int depth, int alpha, int beta)
     nodesSearched++;
     if ((nodesSearched & (remainingTime / 275)) == 0)
     {
-        if (chrono::duration_cast<std::chrono::milliseconds>(
+        if (chrono::duration_cast<chrono::milliseconds>(
                 chrono::steady_clock::now() - startTime)
                 .count() >= moveTime)
         {
             searchCancelled = true;
-            return alpha; // return best known bound, NOT 0
+            return alpha;
         }
     }
     int originalAlpha = alpha;
@@ -97,7 +97,7 @@ int Engine::TTAlphaBeta(int depth, int alpha, int beta)
     }
 
     if (board.isCheckmate())
-        return -100000 + (searchDepth - depth); // Favor quicker mates
+        return -100000 + (searchDepth - depth);
     if (board.isStalemate() || board.isDraw())
         return 0;
     if (depth <= 0)
@@ -106,12 +106,10 @@ int Engine::TTAlphaBeta(int depth, int alpha, int beta)
     if (moves.empty())
         return 0;
 
-    // Move ordering: sort with MVV-LVA and TT prioritization
     sortMovesWithOrdering(moves);
-    int maxEval = -10000000; // Negative infinity
+    int maxEval = -10000000;
     for (Move &move : moves)
     {
-        // cout << move.toAlgebraic() << " ";
         board.makeMove(move);
         int evaluation = -TTAlphaBeta(depth - 1, -beta, -alpha);
         board.undoMove();
@@ -142,21 +140,20 @@ int Engine::TTAlphaBeta(int depth, int alpha, int beta)
 
 int Engine::iterativeDeepening(int maxDepth)
 {
-    int bestScore = std::numeric_limits<int>::min() + 1;
+    int bestScore = numeric_limits<int>::min() + 1;
 
     nodesSearched = 0;
     for (int depth = 1; depth <= maxDepth; depth++)
     {
-        std::vector<Move> legalMoves = board.generateLegalMoves();
+vector<Move> legalMoves = board.generateLegalMoves();
         if (legalMoves.empty())
-            return 0; // No legal moves
+            return 0;
 
-        // Move ordering: sort with MVV-LVA and TT prioritization
         sortMovesWithOrdering(legalMoves);
 
-        int alpha = std::numeric_limits<int>::min() + 1;
-        int beta = std::numeric_limits<int>::max();
-        int currentBestScore = std::numeric_limits<int>::min() + 1;
+        int alpha = numeric_limits<int>::min() + 1;
+        int beta = numeric_limits<int>::max();
+        int currentBestScore = numeric_limits<int>::min() + 1;
 
         for (Move &move : legalMoves)
         {
@@ -178,7 +175,7 @@ int Engine::iterativeDeepening(int maxDepth)
         }
         if (searchCancelled)
             break;
-        bestScore = currentBestScore; // store best score at this depth
+        bestScore = currentBestScore;
     }
 
     return bestScore;
@@ -186,20 +183,20 @@ int Engine::iterativeDeepening(int maxDepth)
 
 int Engine::TTIterativeDeepening(int maxDepth)
 {
-    int bestScore = std::numeric_limits<int>::min() + 1;
+    int bestScore = numeric_limits<int>::min() + 1;
 
     nodesSearched = 0;
     for (int depth = 1; depth <= maxDepth; depth++)
     {
-        std::vector<Move> legalMoves = board.generateLegalMoves();
+vector<Move> legalMoves = board.generateLegalMoves();
         if (legalMoves.empty())
             return 0;
 
         sortMovesWithOrdering(legalMoves);
 
-        int alpha = std::numeric_limits<int>::min() + 1;
-        int beta = std::numeric_limits<int>::max();
-        int currentBestScore = std::numeric_limits<int>::min() + 1;
+        int alpha = numeric_limits<int>::min() + 1;
+        int beta = numeric_limits<int>::max();
+        int currentBestScore = numeric_limits<int>::min() + 1;
 
         for (Move &move : legalMoves)
         {
@@ -236,7 +233,7 @@ int Engine::TTIterativeDeepeningAW(int maxDepth)
 
     for (int depth = 1; depth <= maxDepth; depth++)
     {
-        std::vector<Move> legalMoves = board.generateLegalMoves();
+vector<Move> legalMoves = board.generateLegalMoves();
         if (legalMoves.empty())
             return 0;
 
@@ -247,8 +244,8 @@ int Engine::TTIterativeDeepeningAW(int maxDepth)
 
         if (depth == 1)
         {
-            alpha = std::numeric_limits<int>::min() + 1;
-            beta = std::numeric_limits<int>::max();
+            alpha = numeric_limits<int>::min() + 1;
+            beta = numeric_limits<int>::max();
         }
         else
         {
@@ -258,12 +255,12 @@ int Engine::TTIterativeDeepeningAW(int maxDepth)
 
         int currentBestScore;
 
-        while (true) // aspiration re-search loop
+        while (true)
         {
             int localAlpha = alpha;
             int localBeta = beta;
 
-            currentBestScore = std::numeric_limits<int>::min() + 1;
+            currentBestScore = numeric_limits<int>::min() + 1;
 
             for (Move &move : legalMoves)
             {
@@ -290,22 +287,21 @@ int Engine::TTIterativeDeepeningAW(int maxDepth)
             if (searchCancelled)
                 break;
 
-            // --- Aspiration window checks ---
             if (depth > 1 && currentBestScore <= alpha)
             {
                 alpha -= delta;
                 delta *= 2;
-                continue; // redo search
+                continue;
             }
 
             if (depth > 1 && currentBestScore >= beta)
             {
                 beta += delta;
                 delta *= 2;
-                continue; // redo search
+                continue;
             }
 
-            break; // window success → exit loop
+            break;
         }
         if (searchCancelled)
             break;

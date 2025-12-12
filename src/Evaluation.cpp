@@ -3,12 +3,10 @@
 #include "../include/Board.h"
 #include <cmath>
 #include <algorithm>
-
-// All scores are from White's point of view (positive = good for White)
+using namespace std;
 
 namespace
 {
-    // ------------------ Piece type codes (from Board.cpp) ------------------
     constexpr int PAWN = 1;
     constexpr int KNIGHT = 2;
     constexpr int BISHOP = 3;
@@ -147,7 +145,7 @@ namespace
             int p = board.getPiece(sq);
             if (p == EMPTY)
                 continue;
-            switch (std::abs(p))
+            switch (abs(p))
             {
             case QUEEN:
                 sum += QUEEN_VALUE;
@@ -187,7 +185,7 @@ namespace
             if (piece == EMPTY)
                 continue;
 
-            switch (std::abs(piece))
+            switch (abs(piece))
             {
             case QUEEN:
                 if (piece > 0)
@@ -230,7 +228,7 @@ namespace
                 continue;
 
             int val = 0;
-            switch (std::abs(piece))
+            switch (abs(piece))
             {
             case PAWN:
                 val = PAWN_VALUE;
@@ -273,7 +271,7 @@ namespace
 
             int r = rankOf(sq);
             int f = fileOf(sq);
-            int type = std::abs(piece);
+            int type = abs(piece);
 
             switch (type)
             {
@@ -345,7 +343,7 @@ namespace
             if (sq & 0x88)
                 continue;
             int piece = board.getPiece(sq);
-            if (std::abs(piece) != PAWN)
+            if (abs(piece) != PAWN)
                 continue;
 
             int f = fileOf(sq);
@@ -513,7 +511,7 @@ namespace
             if (piece == EMPTY)
                 continue;
 
-            if ((std::abs(piece) == KNIGHT || std::abs(piece) == BISHOP) &&
+            if ((abs(piece) == KNIGHT || abs(piece) == BISHOP) &&
                 mobility[sq] <= 1)
             {
                 int pen = 20;
@@ -608,9 +606,6 @@ namespace
 
 } // anonymous namespace
 
-// ==========================================================
-// Public evaluation function used by Engine search
-// ==========================================================
 
 int Engine::evaluate()
 {

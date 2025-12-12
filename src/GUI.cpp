@@ -4,9 +4,8 @@
 #include <sstream>
 #include <iomanip>
 #include <chrono>
-using namespace std::chrono;
-
-// ==================== CONSTRUCTOR ====================
+using namespace std;
+using namespace chrono;
 
 ChessGUI::ChessGUI(Board &b, int enginePlay, Engine &e1, Engine &e2, int startTimeMs, int incrementMs)
     : board(b),
@@ -19,13 +18,11 @@ ChessGUI::ChessGUI(Board &b, int enginePlay, Engine &e1, Engine &e2, int startTi
       incrementMs(incrementMs),
       lastTimerUpdate(steady_clock::now())
 {
-    // Create window with resize support
     window.create(sf::VideoMode({WINDOW_WIDTH, WINDOW_HEIGHT}),
                   "Chess Engine - DSA Project",
                   sf::Style::Default);
     window.setFramerateLimit(60);
 
-    // Initialize state
     selectedSquare = -1;
     isDragging = false;
     draggedPiece = EMPTY;
@@ -34,7 +31,6 @@ ChessGUI::ChessGUI(Board &b, int enginePlay, Engine &e1, Engine &e2, int startTi
     lastMoveTo = -1;
     gameOver = false;
 
-    // Initialize scaling variables
     currentWindowWidth = WINDOW_WIDTH;
     currentWindowHeight = WINDOW_HEIGHT;
     scaleX = 1.0f;
@@ -43,33 +39,25 @@ ChessGUI::ChessGUI(Board &b, int enginePlay, Engine &e1, Engine &e2, int startTi
     currentBoardSize = BOARD_SIZE;
     currentInfoPanelWidth = INFO_PANEL_WIDTH;
 
-    // Initialize promotion dialog state
     showingPromotionDialog = false;
     promotionSquare = -1;
 
-    // Initialize colors and resources
     initializeColors();
     loadResources();
 }
 
-// ==================== INITIALIZATION ====================
-
 void ChessGUI::initializeColors()
 {
-    // Board colors (classic wooden style)
     lightSquareColor = sf::Color(240, 217, 181);
     darkSquareColor = sf::Color(181, 136, 99);
-
-    // Highlight colors
-    highlightColor = sf::Color(255, 255, 0, 100);   // Yellow, semi-transparent
-    legalMoveColor = sf::Color(100, 200, 100, 120); // Green, semi-transparent
-    lastMoveColor = sf::Color(255, 255, 100, 80);   // Light yellow
+    highlightColor = sf::Color(255, 255, 0, 100);
+    legalMoveColor = sf::Color(100, 200, 100, 120);
+    lastMoveColor = sf::Color(255, 255, 100, 80);
 }
 
 void ChessGUI::loadResources()
 {
-    // Load piece textures
-    std::map<int, std::string> pieceFiles = {
+    map<int, string> pieceFiles = {
         {WHITE_PAWN, "assets/w-pawn.png"},
         {WHITE_KNIGHT, "assets/w-knight.png"},
         {WHITE_BISHOP, "assets/w-bishop.png"},
@@ -89,23 +77,18 @@ void ChessGUI::loadResources()
         if (texture.loadFromFile(pair.second))
         {
             pieceTextures[pair.first] = texture;
-            // std::cout << "Loaded texture: " << pair.second << std::endl;
         }
         else
         {
-            std::cout << "Failed to load texture: " << pair.second << std::endl;
+            cout << "Failed to load texture: " << pair.second << endl;
         }
     }
 
-    // Try to load font (use default if not available)
     if (!font.openFromFile("assets/fonts/ARIAL.ttf"))
     {
-        // Font not found - that's okay, we'll render without text
-        std::cout << "Note: Font file not found. Text rendering disabled.\n";
+        cout << "Note: Font file not found. Text rendering disabled.\n";
     }
 }
-
-// ==================== MAIN LOOP ====================
 
 void ChessGUI::run()
 {
@@ -127,7 +110,7 @@ void ChessGUI::run()
                 auto duration = duration_cast<milliseconds>(end - start);
 
                 handleMoveTiming(movingSide, duration.count());
-                std::cout << "Time taken: " << duration.count() << " ms\n";
+cout << "Time taken: " << duration.count() << " ms\n";
                 engineTurn = -engineTurn;
             }
         }
@@ -169,13 +152,12 @@ void ChessGUI::makeEngineMove(Engine &engine)
     Move engineMove = engine.getBestMove();
     lastMoveFrom = engineMove.from;
     lastMoveTo = engineMove.to;
-    std::string moveStr = formatMove(engineMove, board.getFullMoveNumber());
+string moveStr = formatMove(engineMove, board.getFullMoveNumber());
     board.makeMove(engineMove);
     moveHistory.push_back(moveStr);
     updateGameState();
 }
 
-// ==================== EVENT HANDLING ====================
 
 void ChessGUI::handleEvents()
 {
@@ -188,7 +170,6 @@ void ChessGUI::handleEvents()
 
         if (auto resized = event->getIf<sf::Event::Resized>())
         {
-            // Handle window resize - maintain aspect ratio and minimum size
             handleWindowResize(resized->size.x, resized->size.y);
         }
 
@@ -224,12 +205,10 @@ void ChessGUI::handleEvents()
             handleMouseMove(mouseMoved->position.x, mouseMoved->position.y);
         }
 
-        // Keyboard shortcuts
         if (auto keyPressed = event->getIf<sf::Event::KeyPressed>())
         {
             if (keyPressed->code == sf::Keyboard::Key::U)
             {
-                // Undo move
                 if (!gameOver)
                 {
                     board.undoMove();
@@ -245,7 +224,6 @@ void ChessGUI::handleEvents()
 
             if (keyPressed->code == sf::Keyboard::Key::R)
             {
-                // Reset board
                 board.setStartingPosition();
                 moveHistory.clear();
                 clearSelection();
@@ -270,36 +248,29 @@ void ChessGUI::handleMousePress(int x, int y)
 
     int piece = board.getPiece(square);
 
-    // Check if clicking on own piece
     if (piece != EMPTY)
     {
         int side = board.getSideToMove();
         if ((side == 0 && piece > 0) || (side == 1 && piece < 0))
         {
-            // If clicking on the same piece that's already selected, deselect it
             if (selectedSquare == square)
             {
                 clearSelection();
                 return;
             }
 
-            // Start dragging (for visual feedback)
             isDragging = true;
             draggedPiece = piece;
             draggedSquare = square;
             dragPosition = sf::Vector2f(x, y);
-
-            // Select square and get legal moves
             selectedSquare = square;
             selectedMoves = board.getLegalMovesFrom(square);
             return;
         }
     }
 
-    // If clicking on empty square or opponent piece, clear selection
     if (selectedSquare >= 0)
     {
-        // If already have a piece selected, try to move
         if (tryMakeMove(selectedSquare, square))
         {
             clearSelection();
@@ -329,7 +300,6 @@ void ChessGUI::handleMouseRelease(int x, int y)
     isDragging = false;
     draggedPiece = EMPTY;
     draggedSquare = -1;
-    // Don't clear selection here - let it stay visible until next click
 }
 
 void ChessGUI::handleMouseMove(int x, int y)
@@ -342,35 +312,25 @@ void ChessGUI::handleMouseMove(int x, int y)
 
 void ChessGUI::handleWindowResize(int width, int height)
 {
-    // Set minimum window size to prevent the window from becoming too small
-    const int MIN_WIDTH = 640;  // BOARD_SIZE (640) + INFO_PANEL_WIDTH (300) = 940, but use 640 as minimum
-    const int MIN_HEIGHT = 640; // BOARD_SIZE (640)
+    const int MIN_WIDTH = 640;
+    const int MIN_HEIGHT = 640;
 
     if (width < MIN_WIDTH || height < MIN_HEIGHT)
     {
-        // Resize to minimum size if window is too small
         window.setSize(sf::Vector2u(MIN_WIDTH, MIN_HEIGHT));
         width = MIN_WIDTH;
         height = MIN_HEIGHT;
     }
 
-    // Update current window dimensions
     currentWindowWidth = width;
     currentWindowHeight = height;
-
-    // Calculate scaling factors
     scaleX = static_cast<float>(width) / static_cast<float>(WINDOW_WIDTH);
     scaleY = static_cast<float>(height) / static_cast<float>(WINDOW_HEIGHT);
-
-    // Use the smaller scale to maintain aspect ratio
-    float scale = std::min(scaleX, scaleY);
-
-    // Update scaled dimensions
+    float scale = min(scaleX, scaleY);
     currentSquareSize = SQUARE_SIZE * scale;
     currentBoardSize = BOARD_SIZE * scale;
     currentInfoPanelWidth = INFO_PANEL_WIDTH * scale;
 
-    // Update the view to maintain proper aspect ratio
     sf::View view = window.getView();
     view.setSize(sf::Vector2f(static_cast<float>(width), static_cast<float>(height)));
     view.setCenter(sf::Vector2f(static_cast<float>(width) / 2.0f, static_cast<float>(height) / 2.0f));
@@ -379,12 +339,9 @@ void ChessGUI::handleWindowResize(int width, int height)
 
 bool ChessGUI::tryMakeMove(int fromSquare, int toSquare)
 {
-    // Get all legal moves from the source square
-    std::vector<Move> legalMoves = board.getLegalMovesFrom(fromSquare);
-
-    // Find the move that matches from->to
+    vector<Move> legalMoves = board.getLegalMovesFrom(fromSquare);
     Move *foundMove = nullptr;
-    std::vector<Move> promotionMoves;
+    vector<Move> promotionMoves;
 
     for (Move &move : legalMoves)
     {
@@ -402,29 +359,22 @@ bool ChessGUI::tryMakeMove(int fromSquare, int toSquare)
         }
     }
 
-    // Handle promotion
     if (!promotionMoves.empty())
     {
         showPromotionDialog(promotionMoves, toSquare);
-        return false; // Don't make the move yet, wait for user selection
+        return false;
     }
 
     if (foundMove)
     {
         int movingSide = board.getSideToMove();
         updateTimers();
-
-        // Store move for history
-        std::string moveStr = formatMove(*foundMove, board.getFullMoveNumber());
-
-        // Make the move
+        string moveStr = formatMove(*foundMove, board.getFullMoveNumber());
         lastMoveFrom = fromSquare;
         lastMoveTo = toSquare;
-
         cout << foundMove->toAlgebraic() << " ";
         board.makeMove(*foundMove);
         moveHistory.push_back(moveStr);
-
         updateGameState();
         handleMoveTiming(movingSide);
         engineTurn = -engineTurn;
@@ -436,25 +386,20 @@ bool ChessGUI::tryMakeMove(int fromSquare, int toSquare)
 
 int ChessGUI::selectPromotionPiece()
 {
-    // This function is now handled by the promotion dialog
-    // Return a default value (should not be called when dialog is active)
     int side = board.getSideToMove();
     return (side == 0) ? WHITE_QUEEN : BLACK_QUEEN;
 }
 
-// ==================== RENDERING ====================
 
 void ChessGUI::render()
 {
     window.clear(sf::Color(50, 50, 50));
-
     drawBoard();
     drawHighlights();
     drawPieces();
     drawDraggedPiece();
     drawInfoPanel();
 
-    // Draw promotion dialog if active
     if (showingPromotionDialog)
     {
         drawPromotionDialog();
@@ -486,24 +431,21 @@ void ChessGUI::drawBoard()
         }
     }
 
-    // Draw coordinate labels if font is loaded
     if (font.getInfo().family != "")
     {
-        float fontSize = 16.0f * std::min(scaleX, scaleY);
+        float fontSize = 16.0f * min(scaleX, scaleY);
 
-        // File labels (a-h)
         for (int file = 0; file < 8; file++)
         {
-            sf::Text text(font, std::string(1, 'a' + file), static_cast<unsigned int>(fontSize));
+            sf::Text text(font, string(1, 'a' + file), static_cast<unsigned int>(fontSize));
             text.setFillColor(file % 2 == 1 ? lightSquareColor : darkSquareColor);
             text.setPosition(sf::Vector2f(file * currentSquareSize + 5, currentBoardSize - 20));
             window.draw(text);
         }
 
-        // Rank labels (1-8)
         for (int rank = 0; rank < 8; rank++)
         {
-            sf::Text text(font, std::to_string(rank + 1), static_cast<unsigned int>(fontSize));
+            sf::Text text(font, to_string(rank + 1), static_cast<unsigned int>(fontSize));
             text.setFillColor(rank % 2 == 0 ? lightSquareColor : darkSquareColor);
             text.setPosition(sf::Vector2f(currentBoardSize - 15, (7 - rank) * currentSquareSize + 5));
             window.draw(text);
@@ -516,9 +458,8 @@ void ChessGUI::drawPieces()
     for (int square88 = 0; square88 < 128; square88++)
     {
         if (square88 & 0x88)
-            continue; // Skip off-board squares
+            continue;
 
-        // Don't draw the dragged piece in its original position
         if (isDragging && square88 == draggedSquare)
             continue;
 
@@ -536,19 +477,13 @@ void ChessGUI::drawPiece(int piece, float x, float y, float scale)
     if (piece == EMPTY)
         return;
 
-    // Check if we have a texture for this piece
     if (pieceTextures.find(piece) != pieceTextures.end())
     {
-        // Draw piece using texture
         sf::Sprite sprite(pieceTextures[piece]);
-
-        // Scale the sprite to fit the square
-        float pieceSize = currentSquareSize * 0.9f * scale; // 90% of square size
+        float pieceSize = currentSquareSize * 0.9f * scale;
         sf::Vector2u textureSize = pieceTextures[piece].getSize();
-        float scaleFactor = pieceSize / std::max(textureSize.x, textureSize.y);
+        float scaleFactor = pieceSize / max(textureSize.x, textureSize.y);
         sprite.setScale(sf::Vector2f(scaleFactor, scaleFactor));
-
-        // Center the piece in the square
         sf::Vector2f spriteSize = sf::Vector2f(
             textureSize.x * scaleFactor,
             textureSize.y * scaleFactor);
@@ -560,29 +495,22 @@ void ChessGUI::drawPiece(int piece, float x, float y, float scale)
     }
     else
     {
-        // Fallback: draw piece as a circle with letter if texture not found
         float radius = currentSquareSize * 0.35f * scale;
         sf::CircleShape circle(radius);
-
         circle.setPosition(sf::Vector2f(x + currentSquareSize / 2 - radius, y + currentSquareSize / 2 - radius));
         circle.setFillColor(piece > 0 ? sf::Color(255, 255, 255) : sf::Color(50, 50, 50));
         circle.setOutlineThickness(2);
         circle.setOutlineColor(sf::Color(0, 0, 0, 150));
-
         window.draw(circle);
 
-        // Draw piece letter if font is available
         if (font.getInfo().family != "")
         {
-            float fontSize = 40.0f * scale * std::min(scaleX, scaleY);
-            sf::Text text(font, std::string(1, pieceToChar(piece)), static_cast<unsigned int>(fontSize));
+            float fontSize = 40.0f * scale * min(scaleX, scaleY);
+            sf::Text text(font, string(1, pieceToChar(piece)), static_cast<unsigned int>(fontSize));
             text.setFillColor(piece > 0 ? sf::Color(100, 100, 100) : sf::Color(220, 220, 220));
             text.setStyle(sf::Text::Bold);
-
-            // Center the text (simplified for SFML 3.0)
             text.setPosition(sf::Vector2f(x + currentSquareSize / 2 - 10,
                                           y + currentSquareSize / 2 - 15));
-
             window.draw(text);
         }
     }
@@ -600,7 +528,6 @@ void ChessGUI::drawDraggedPiece()
 
 void ChessGUI::drawHighlights()
 {
-    // Highlight last move
     if (lastMoveFrom >= 0)
     {
         highlightSquare(lastMoveFrom, lastMoveColor);
@@ -610,13 +537,11 @@ void ChessGUI::drawHighlights()
         highlightSquare(lastMoveTo, lastMoveColor);
     }
 
-    // Highlight selected square
     if (selectedSquare >= 0 && !isDragging)
     {
         highlightSquare(selectedSquare, highlightColor);
     }
 
-    // Draw legal move indicators
     drawLegalMoves();
 }
 
@@ -625,18 +550,15 @@ void ChessGUI::drawLegalMoves()
     for (const Move &move : selectedMoves)
     {
         sf::Vector2f center = squareCenter(move.to);
-
-        // Draw circle for legal moves
         float radius = currentSquareSize * 0.15f;
         if (board.getPiece(move.to) != EMPTY)
         {
-            radius = currentSquareSize * 0.4f; // Larger circle for captures
+            radius = currentSquareSize * 0.4f;
         }
 
         sf::CircleShape indicator(radius);
         indicator.setPosition(sf::Vector2f(center.x - radius, center.y - radius));
         indicator.setFillColor(legalMoveColor);
-
         window.draw(indicator);
     }
 }
@@ -665,24 +587,24 @@ void ChessGUI::drawInfoPanel()
     if (font.getInfo().family == "")
         return; // No font loaded
 
-    float yOffset = 20 * std::min(scaleX, scaleY);
+    float yOffset = 20 * min(scaleX, scaleY);
 
     // Title
-    float titleSize = 24.0f * std::min(scaleX, scaleY);
+    float titleSize = 24.0f * min(scaleX, scaleY);
     sf::Text title(font, "Chess Engine", static_cast<unsigned int>(titleSize));
     title.setFillColor(sf::Color::White);
     title.setStyle(sf::Text::Bold);
     title.setPosition(sf::Vector2f(currentBoardSize + 20, yOffset));
     window.draw(title);
-    yOffset += 40 * std::min(scaleX, scaleY);
+    yOffset += 40 * min(scaleX, scaleY);
 
     // Current turn
-    float turnSize = 18.0f * std::min(scaleX, scaleY);
-    sf::Text turnText(font, std::string("Turn: ") + (board.getSideToMove() == 0 ? "White" : "Black"), static_cast<unsigned int>(turnSize));
+    float turnSize = 18.0f * min(scaleX, scaleY);
+    sf::Text turnText(font, string("Turn: ") + (board.getSideToMove() == 0 ? "White" : "Black"), static_cast<unsigned int>(turnSize));
     turnText.setFillColor(sf::Color::White);
     turnText.setPosition(sf::Vector2f(currentBoardSize + 20, yOffset));
     window.draw(turnText);
-    yOffset += 30 * std::min(scaleX, scaleY);
+    yOffset += 30 * min(scaleX, scaleY);
 
     // Player clocks
     drawClocks();
@@ -691,20 +613,20 @@ void ChessGUI::drawInfoPanel()
     drawGameStatus();
 
     // Move history
-    yOffset = 190 * std::min(scaleX, scaleY);
-    float historyTitleSize = 18.0f * std::min(scaleX, scaleY);
+    yOffset = 190 * min(scaleX, scaleY);
+    float historyTitleSize = 18.0f * min(scaleX, scaleY);
     sf::Text historyTitle(font, "Move History:", static_cast<unsigned int>(historyTitleSize));
     historyTitle.setFillColor(sf::Color::White);
     historyTitle.setStyle(sf::Text::Bold);
     historyTitle.setPosition(sf::Vector2f(currentBoardSize + 20, yOffset));
     window.draw(historyTitle);
-    yOffset += 30 * std::min(scaleX, scaleY);
+    yOffset += 30 * min(scaleX, scaleY);
 
     drawMoveHistory();
 
     // Controls
-    yOffset = currentWindowHeight - 100 * std::min(scaleX, scaleY);
-    float controlsSize = 14.0f * std::min(scaleX, scaleY);
+    yOffset = currentWindowHeight - 100 * min(scaleX, scaleY);
+    float controlsSize = 14.0f * min(scaleX, scaleY);
     sf::Text controls(font, "Controls:\nU - Undo\nR - Reset", static_cast<unsigned int>(controlsSize));
     controls.setFillColor(sf::Color(150, 150, 150));
     controls.setPosition(sf::Vector2f(currentBoardSize + 20, yOffset));
@@ -716,7 +638,7 @@ void ChessGUI::drawClocks()
     if (font.getInfo().family == "")
         return;
 
-    float scale = std::min(scaleX, scaleY);
+    float scale = min(scaleX, scaleY);
     float baseY = 80.0f * scale;
     float lineHeight = 22.0f * scale;
     float clockSize = 18.0f * scale;
@@ -740,11 +662,11 @@ void ChessGUI::drawMoveHistory()
     if (font.getInfo().family == "")
         return;
 
-    float yOffset = 180 * std::min(scaleX, scaleY);
-    int displayCount = std::min(15, (int)moveHistory.size());
-    int startIndex = std::max(0, (int)moveHistory.size() - displayCount);
+    float yOffset = 180 * min(scaleX, scaleY);
+    int displayCount = min(15, (int)moveHistory.size());
+    int startIndex = max(0, (int)moveHistory.size() - displayCount);
 
-    float moveTextSize = 14.0f * std::min(scaleX, scaleY);
+    float moveTextSize = 14.0f * min(scaleX, scaleY);
 
     for (int i = startIndex; i < moveHistory.size(); i++)
     {
@@ -752,7 +674,7 @@ void ChessGUI::drawMoveHistory()
         moveText.setFillColor(sf::Color(200, 200, 200));
         moveText.setPosition(sf::Vector2f(currentBoardSize + 25, yOffset));
         window.draw(moveText);
-        yOffset += 20 * std::min(scaleX, scaleY);
+        yOffset += 20 * min(scaleX, scaleY);
     }
 }
 
@@ -761,8 +683,8 @@ void ChessGUI::drawGameStatus()
     if (font.getInfo().family == "")
         return;
 
-    float yOffset = 140 * std::min(scaleX, scaleY);
-    float statusSize = 16.0f * std::min(scaleX, scaleY);
+    float yOffset = 140 * min(scaleX, scaleY);
+    float statusSize = 16.0f * min(scaleX, scaleY);
     sf::Text statusText(font, "", static_cast<unsigned int>(statusSize));
     statusText.setPosition(sf::Vector2f(currentBoardSize + 20, yOffset));
 
@@ -787,7 +709,7 @@ void ChessGUI::drawGameStatus()
     window.draw(statusText);
 }
 
-void ChessGUI::showPromotionDialog(const std::vector<Move> &moves, int square)
+void ChessGUI::showPromotionDialog(const vector<Move> &moves, int square)
 {
     showingPromotionDialog = true;
     promotionSquare = square;
@@ -799,13 +721,11 @@ void ChessGUI::drawPromotionDialog()
     if (pendingPromotionMoves.empty())
         return;
 
-    // Calculate dialog position (center of the board)
     float dialogWidth = currentSquareSize * 6.0f;
     float dialogHeight = currentSquareSize * 2.5f;
     float dialogX = (currentBoardSize - dialogWidth) / 2.0f;
     float dialogY = (currentBoardSize - dialogHeight) / 2.0f;
 
-    // Draw dialog background
     sf::RectangleShape dialog(sf::Vector2f(dialogWidth, dialogHeight));
     dialog.setPosition(sf::Vector2f(dialogX, dialogY));
     dialog.setFillColor(sf::Color(50, 50, 50, 220));
@@ -813,10 +733,9 @@ void ChessGUI::drawPromotionDialog()
     dialog.setOutlineColor(sf::Color::White);
     window.draw(dialog);
 
-    // Draw title
     if (font.getInfo().family != "")
     {
-        float titleSize = 20.0f * std::min(scaleX, scaleY);
+        float titleSize = 20.0f * min(scaleX, scaleY);
         sf::Text title(font, "Choose Promotion Piece", static_cast<unsigned int>(titleSize));
         title.setFillColor(sf::Color::White);
         title.setStyle(sf::Text::Bold);
@@ -824,24 +743,16 @@ void ChessGUI::drawPromotionDialog()
         window.draw(title);
     }
 
-    // Draw promotion piece options
     float squareSize = currentSquareSize;
     float pieceSpacing = currentSquareSize * 1.2f;
-
-    // Calculate the total width of all squares including spacing
-    size_t numPieces = std::min(pendingPromotionMoves.size(), size_t(4));
+    size_t numPieces = min(pendingPromotionMoves.size(), size_t(4));
     float totalWidth = (numPieces * squareSize) + ((numPieces - 1) * (pieceSpacing - squareSize));
-
-    // Center the entire row of squares horizontally
     float startX = dialogX + (dialogWidth - totalWidth) / 2.0f;
     float squareY = dialogY + dialogHeight * 0.4f;
 
     for (size_t i = 0; i < numPieces; i++)
     {
-        // Calculate square position
         float squareX = startX + i * pieceSpacing;
-
-        // Draw piece background square
         sf::RectangleShape pieceBg(sf::Vector2f(squareSize, squareSize));
         pieceBg.setPosition(sf::Vector2f(squareX, squareY));
         pieceBg.setFillColor(sf::Color(240, 240, 240, 200));
@@ -849,7 +760,6 @@ void ChessGUI::drawPromotionDialog()
         pieceBg.setOutlineColor(sf::Color::Black);
         window.draw(pieceBg);
 
-        // Draw piece at the same position as the square
         int piece = pendingPromotionMoves[i].promotionPiece;
         drawPiece(piece, squareX, squareY, 1.0f);
     }
@@ -890,7 +800,7 @@ bool ChessGUI::handlePromotionClick(int x, int y)
         Move selectedMove = pendingPromotionMoves[pieceIndex];
 
         // Store move for history
-        std::string moveStr = formatMove(selectedMove, board.getFullMoveNumber());
+string moveStr = formatMove(selectedMove, board.getFullMoveNumber());
 
         // Make the move
         lastMoveFrom = selectedMove.from;
@@ -913,14 +823,11 @@ bool ChessGUI::handlePromotionClick(int x, int y)
 
 void ChessGUI::drawCapturedPieces()
 {
-    // TODO: Implement captured pieces display
 }
 
-// ==================== COORDINATE CONVERSION ====================
 
 int ChessGUI::screenToSquare(int x, int y) const
 {
-    // Check if click is on the board
     if (x < 0 || x >= currentBoardSize || y < 0 || y >= currentBoardSize)
     {
         return -1;
@@ -957,7 +864,6 @@ sf::Vector2f ChessGUI::squareCenter(int square88) const
     return sf::Vector2f(topLeft.x + currentSquareSize / 2, topLeft.y + currentSquareSize / 2);
 }
 
-// ==================== UTILITY ====================
 
 void ChessGUI::updateGameState()
 {
@@ -990,57 +896,49 @@ void ChessGUI::clearSelection()
     selectedMoves.clear();
 }
 
-std::string ChessGUI::formatMove(const Move &move, int moveNumber) const
+string ChessGUI::formatMove(const Move &move, int moveNumber) const
 {
-    std::ostringstream oss;
+ostringstream oss;
 
     // Move number for white moves
     if (board.getSideToMove() == 0)
     {
         oss << moveNumber << ". ";
     }
-    else if (moveHistory.empty() || moveHistory.back().find('.') != std::string::npos)
+    else if (moveHistory.empty() || moveHistory.back().find('.') != string::npos)
     {
         oss << moveNumber << "... ";
     }
 
     // Get piece character
     char pieceChar = pieceToChar(move.piece);
-    if (std::abs(move.piece) != 1)
+    if (abs(move.piece) != 1)
     { // Not a pawn
-        oss << (char)std::toupper(pieceChar);
+        oss << (char)toupper(pieceChar);
     }
 
-    // Origin square for disambiguation (simplified - full implementation would be more complex)
-    // oss << squareToAlgebraic(move.from);
-
-    // Capture notation
     if (move.capturedPiece != 0)
     {
-        if (std::abs(move.piece) == 1)
-        { // Pawn capture
+        if (abs(move.piece) == 1)
+        {
             oss << (char)('a' + fileOf(move.from));
         }
         oss << "x";
     }
 
-    // Destination square
     oss << squareToAlgebraic(move.to);
 
-    // Promotion
     if (move.flags & FLAG_PROMOTION)
     {
-        oss << "=" << (char)std::toupper(pieceToChar(move.promotionPiece));
+        oss << "=" << (char)toupper(pieceToChar(move.promotionPiece));
     }
-
-    // Castling
     if (move.flags & FLAG_CASTLING_KINGSIDE)
     {
-        return (board.getSideToMove() == 0 ? std::to_string(moveNumber) + ". " : "") + "O-O";
+        return (board.getSideToMove() == 0 ? to_string(moveNumber) + ". " : "") + "O-O";
     }
     if (move.flags & FLAG_CASTLING_QUEENSIDE)
     {
-        return (board.getSideToMove() == 0 ? std::to_string(moveNumber) + ". " : "") + "O-O-O";
+        return (board.getSideToMove() == 0 ? to_string(moveNumber) + ". " : "") + "O-O-O";
     }
 
     return oss.str();
@@ -1061,7 +959,7 @@ void ChessGUI::updateTimers()
 
     int activeSide = board.getSideToMove();
     long long &timeRef = (activeSide == 0) ? whiteTimeMs : blackTimeMs;
-    timeRef = std::max(0LL, timeRef - elapsed);
+    timeRef = max(0LL, timeRef - elapsed);
 
     lastTimerUpdate = now;
 }
@@ -1072,14 +970,14 @@ void ChessGUI::handleMoveTiming(int movingSide, long long moveDurationMs)
 
     if (moveDurationMs > 0)
     {
-        timeRef = std::max(0LL, timeRef - moveDurationMs);
+        timeRef = max(0LL, timeRef - moveDurationMs);
     }
 
-    timeRef = std::max(0LL, timeRef + static_cast<long long>(incrementMs));
+    timeRef = max(0LL, timeRef + static_cast<long long>(incrementMs));
     lastTimerUpdate = steady_clock::now();
 }
 
-std::string ChessGUI::formatTime(long long ms) const
+string ChessGUI::formatTime(long long ms) const
 {
     if (ms < 0)
         ms = 0;
@@ -1087,8 +985,8 @@ std::string ChessGUI::formatTime(long long ms) const
     long long minutes = totalSeconds / 60;
     long long seconds = totalSeconds % 60;
 
-    std::ostringstream oss;
-    oss << std::setw(2) << std::setfill('0') << minutes
-        << ":" << std::setw(2) << std::setfill('0') << seconds;
+ostringstream oss;
+    oss << setw(2) << setfill('0') << minutes
+        << ":" << setw(2) << setfill('0') << seconds;
     return oss.str();
 }

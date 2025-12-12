@@ -2,6 +2,8 @@
 #include <iostream>
 #include <iomanip>
 #include <chrono>
+using namespace std;
+using namespace chrono;
 
 /**
  * Perft (Performance Test) - Counts nodes at each depth
@@ -20,7 +22,7 @@ uint64_t perft(Board &board, int depth)
         return 1;
 
     uint64_t nodes = 0;
-    std::vector<Move> moves = board.generateLegalMoves();
+vector<Move> moves = board.generateLegalMoves();
 
     for (const Move &move : moves)
     {
@@ -38,10 +40,10 @@ uint64_t perft(Board &board, int depth)
  */
 void perftDivide(Board &board, int depth)
 {
-    std::cout << "\nPerft Divide (Depth " << depth << "):\n";
-    std::cout << "====================================\n";
+cout << "\nPerft Divide (Depth " << depth << "):\n";
+cout << "====================================\n";
 
-    std::vector<Move> moves = board.generateLegalMoves();
+vector<Move> moves = board.generateLegalMoves();
     uint64_t totalNodes = 0;
 
     for (const Move &move : moves)
@@ -50,11 +52,11 @@ void perftDivide(Board &board, int depth)
         uint64_t nodes = perft(board, depth - 1);
         board.undoMove();
 
-        std::cout << move.toAlgebraic() << ": " << nodes << "\n";
+cout << move.toAlgebraic() << ": " << nodes << "\n";
         totalNodes += nodes;
     }
 
-    std::cout << "\nTotal nodes: " << totalNodes << "\n";
+cout << "\nTotal nodes: " << totalNodes << "\n";
 }
 
 /**
@@ -62,32 +64,32 @@ void perftDivide(Board &board, int depth)
  */
 void runPerftTest(Board &board, int depth, uint64_t expectedNodes)
 {
-    std::cout << "\nPerft Depth " << depth << ":\n";
-    std::cout << "Expected: " << expectedNodes << " nodes\n";
+cout << "\nPerft Depth " << depth << ":\n";
+cout << "Expected: " << expectedNodes << " nodes\n";
 
-    auto start = std::chrono::high_resolution_clock::now();
+    auto start = chrono::high_resolution_clock::now();
     uint64_t nodes = perft(board, depth);
-    auto end = std::chrono::high_resolution_clock::now();
+    auto end = chrono::high_resolution_clock::now();
 
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
 
-    std::cout << "Result:   " << nodes << " nodes\n";
-    std::cout << "Time:     " << duration.count() << " ms\n";
+cout << "Result:   " << nodes << " nodes\n";
+cout << "Time:     " << duration.count() << " ms\n";
 
     if (nodes == expectedNodes)
     {
-        std::cout << "Status:   ✓ PASSED\n";
+cout << "Status:   ✓ PASSED\n";
     }
     else
     {
-        std::cout << "Status:   ✗ FAILED (difference: "
+cout << "Status:   ✗ FAILED (difference: "
                   << (int64_t)(nodes - expectedNodes) << ")\n";
     }
 
     if (duration.count() > 0)
     {
         uint64_t nps = (nodes * 1000) / duration.count();
-        std::cout << "Speed:    " << nps << " nodes/sec\n";
+cout << "Speed:    " << nps << " nodes/sec\n";
     }
 }
 
@@ -96,22 +98,22 @@ void runPerftTest(Board &board, int depth, uint64_t expectedNodes)
  */
 struct PerftPosition
 {
-    std::string name;
-    std::string fen;
-    std::vector<uint64_t> expectedNodes; // Results for depths 1, 2, 3, 4, 5...
+string name;
+string fen;
+vector<uint64_t> expectedNodes; // Results for depths 1, 2, 3, 4, 5...
 };
 
 int main()
 {
-    std::cout << "===============================================\n";
-    std::cout << "  PERFT Testing - Move Generation Validation\n";
-    std::cout << "===============================================\n\n";
+cout << "===============================================\n";
+cout << "  PERFT Testing - Move Generation Validation\n";
+cout << "===============================================\n\n";
 
-    std::cout << "Perft (Performance Test) counts all possible positions\n";
-    std::cout << "at each depth. This validates move generation correctness.\n\n";
+cout << "Perft (Performance Test) counts all possible positions\n";
+cout << "at each depth. This validates move generation correctness.\n\n";
 
     // Test positions
-    std::vector<PerftPosition> positions = {
+vector<PerftPosition> positions = {
         {"Starting Position",
          "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
          {20, 400, 8902, 197281, 4865609}},
@@ -134,18 +136,18 @@ int main()
     // Run tests for each position
     for (const auto &pos : positions)
     {
-        std::cout << "\n"
-                  << std::string(60, '=') << "\n";
-        std::cout << "Testing: " << pos.name << "\n";
-        std::cout << "FEN: " << pos.fen << "\n";
-        std::cout << std::string(60, '=') << "\n";
+cout << "\n"
+                  << string(60, '=') << "\n";
+cout << "Testing: " << pos.name << "\n";
+cout << "FEN: " << pos.fen << "\n";
+cout << string(60, '=') << "\n";
 
         Board board;
         board.setFEN(pos.fen);
         board.print();
 
         // Run perft tests up to depth 3 (depth 4+ takes too long for initial testing)
-        int maxDepth = std::min(5, (int)pos.expectedNodes.size());
+        int maxDepth = min(5, (int)pos.expectedNodes.size());
 
         for (int depth = 1; depth <= maxDepth; depth++)
         {
@@ -159,19 +161,19 @@ int main()
         }
     }
 
-    std::cout << "\n"
-              << std::string(60, '=') << "\n";
-    std::cout << "Perft Testing Complete!\n";
-    std::cout << std::string(60, '=') << "\n\n";
+cout << "\n"
+              << string(60, '=') << "\n";
+cout << "Perft Testing Complete!\n";
+cout << string(60, '=') << "\n\n";
 
-    std::cout << "Note: To run deeper perft tests (depth 4-6), compile with\n";
-    std::cout << "optimizations enabled (-O3 or Release mode) for better performance.\n\n";
+cout << "Note: To run deeper perft tests (depth 4-6), compile with\n";
+cout << "optimizations enabled (-O3 or Release mode) for better performance.\n\n";
 
-    std::cout << "Expected performance:\n";
-    std::cout << "  - Depth 1-3: Instant (< 10ms)\n";
-    std::cout << "  - Depth 4:   < 1 second\n";
-    std::cout << "  - Depth 5:   < 30 seconds (optimized build)\n";
-    std::cout << "  - Depth 6:   Several minutes\n\n";
+cout << "Expected performance:\n";
+cout << "  - Depth 1-3: Instant (< 10ms)\n";
+cout << "  - Depth 4:   < 1 second\n";
+cout << "  - Depth 5:   < 30 seconds (optimized build)\n";
+cout << "  - Depth 6:   Several minutes\n\n";
 
     return 0;
 }

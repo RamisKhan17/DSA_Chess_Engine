@@ -70,16 +70,7 @@ struct Move
         : from(f), to(t), piece(p), capturedPiece(cap),
           promotionPiece(0), flags(FLAG_NONE), score(0) {}
 
-    /**
-     * Convert move to algebraic notation (e.g., "e2e4")
-     * Time Complexity: O(1)
-     */
     std::string toAlgebraic() const;
-
-    /**
-     * Convert move to UCI format
-     * Time Complexity: O(1)
-     */
     std::string toUCI() const;
 };
 
@@ -88,9 +79,6 @@ inline bool operator==(const Move &moveA, const Move &moveB)
     return moveA.from == moveB.from && moveA.to == moveB.to && moveA.piece == moveB.piece && moveA.capturedPiece == moveB.capturedPiece && moveA.promotionPiece == moveB.promotionPiece && moveA.flags == moveB.flags;
 }
 
-/**
- * Structure to store move history for undo functionality
- */
 struct MoveInfo
 {
     Move move;
@@ -145,12 +133,8 @@ private:
     uint64_t rand64(uint64_t &state);
 
 public:
-    /**
-     * Constructor - creates empty board
-     * Time Complexity: O(1)
-     */
     Board();
-    uint64_t hash; // Current Board hash value
+    uint64_t hash;
     uint64_t zobristPieceSquare[12][128];
     uint64_t zobristCastling[16];
     uint64_t zobristPassant[8];
@@ -177,8 +161,6 @@ public:
      */
     std::string getFEN() const;
 
-    // ==================== HASHING FUNCTIONS ========================
-
     int pieceToZobristNumbering(int piece);
     void initZobristArrays();
     void setHash();
@@ -186,132 +168,25 @@ public:
     void undoHashUpdate(Move move);
     uint64_t moveHash(uint64_t currentHash, Move move);
 
-    // ==================== CORE API FOR TEAMMATES ====================
-
-    /**
-     * Generates all legal moves for current position
-     * Time Complexity: O(n*m) where n = number of pieces, m = avg moves per piece
-     * Space Complexity: O(k) where k = number of legal moves
-     * @return Vector of all legal moves
-     */
     std::vector<Move> generateLegalMoves();
     std::vector<Move> generatePseudoLegalMoves() const;
-
-    /**
-     * Generates legal moves from a specific square
-     * Time Complexity: O(m) where m = number of moves from square
-     * @param square - 0x88 square index
-     * @return Vector of legal moves from that square
-     */
     std::vector<Move> getLegalMovesFrom(int square);
-
-    /**
-     * Makes a move on the board
-     * Time Complexity: O(1)
-     * @param move - Move to make
-     * @return true if move was legal and made
-     */
     bool makeMove(const Move &move);
-
-    /**
-     * Undoes the last move
-     * Time Complexity: O(1)
-     */
     void undoMove();
-
-    /**
-     * Checks if given side is in check
-     * Time Complexity: O(n) where n = number of opponent pieces
-     * @param side - 0 for white, 1 for black
-     * @return true if side is in check
-     */
     bool isCheck(int side) const;
-
-    /**
-     * Checks if current position is checkmate
-     * Time Complexity: O(n*m) - generates all legal moves
-     * @return true if current side is checkmated
-     */
     bool isCheckmate();
-
-    /**
-     * Checks if current position is stalemate
-     * Time Complexity: O(n*m)
-     * @return true if stalemate
-     */
     bool isStalemate();
-
-    /**
-     * Checks if position is draw (50-move rule, insufficient material, etc.)
-     * Time Complexity: O(n) where n = number of pieces
-     * @return true if position is drawn
-     */
     bool isDraw() const;
 
-    // ==================== HELPER FUNCTIONS ====================
-
-    /**
-     * Gets piece at given square
-     * Time Complexity: O(1)
-     * @param square - 0x88 square index
-     * @return Piece value (0 if empty, positive/negative for white/black)
-     */
     int getPiece(int square) const;
-
-    /**
-     * Sets piece at given square
-     * Time Complexity: O(1)
-     * @param square - 0x88 square index
-     * @param piece - Piece value to set
-     */
     void setPiece(int square, int piece);
-
-    /**
-     * Checks if square is valid (on board)
-     * Time Complexity: O(1)
-     * @param square - 0x88 square index
-     * @return true if square is on board
-     */
     bool isValidSquare(int square) const;
-
-    /**
-     * Gets current side to move
-     * @return 0 for white, 1 for black
-     */
     int getSideToMove() const { return sideToMove; }
-
-    /**
-     * Gets castling rights
-     * @return Castling rights bitfield
-     */
     int getCastlingRights() const { return castlingRights; }
-
-    /**
-     * Gets en passant square
-     * @return 0x88 square index or -1 if none
-     */
     int getEnPassantSquare() const { return enPassantSquare; }
-
     bool enemyPawnCanCaptureEP(int epSquare);
-    /**
-     * Gets half move clock
-     * @return Number of half moves since last capture or pawn move
-     */
-    int getHalfMoveClock() const
-    {
-        return halfMoveClock;
-    }
-
-    /**
-     * Gets full move number
-     * @return Current full move number
-     */
+    int getHalfMoveClock() const { return halfMoveClock; }
     int getFullMoveNumber() const { return fullMoveNumber; }
-
-    /**
-     * Prints board to console for debugging
-     * Time Complexity: O(1)
-     */
     void print() const;
 
 private:

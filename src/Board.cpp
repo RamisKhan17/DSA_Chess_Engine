@@ -9,7 +9,7 @@ using namespace std;
 // Helper: piece value lookup used for MVV-LVA ordering
 static inline int getPieceValue(int piece)
 {
-    switch (std::abs(piece))
+    switch (abs(piece))
     {
     case 1:
         return 100; // Pawn
@@ -28,8 +28,6 @@ static inline int getPieceValue(int piece)
     }
 }
 
-// Helper: Sort moves with MVV-LVA and TT prioritization
-// Prioritizes: TT hits > captures (MVV-LVA) > promotions > quiet moves
 struct TTEntry
 {
     uint64_t key;
@@ -44,17 +42,14 @@ const int Board::BISHOP_DIRECTIONS[4] = {-17, -15, 15, 17};
 const int Board::ROOK_DIRECTIONS[4] = {-16, -1, 1, 16};
 const int Board::KING_OFFSETS[8] = {-17, -16, -15, -1, 1, 15, 16, 17};
 
-// ==================== CONSTRUCTORS ====================
-
 Board::Board()
 {
-    // Initialize empty board
     for (int i = 0; i < 128; i++)
     {
         board[i] = EMPTY;
     }
 
-    sideToMove = 0; // White to move
+    sideToMove = 0;
     castlingRights = 0;
     enPassantSquare = -1;
     halfMoveClock = 0;
@@ -62,17 +57,12 @@ Board::Board()
     initZobristArrays();
 }
 
-// ==================== BOARD SETUP ====================
-
 void Board::setStartingPosition()
 {
-    // Clear board
     for (int i = 0; i < 128; i++)
     {
         board[i] = EMPTY;
     }
-
-    // White pieces (rank 1)
     board[0x00] = WHITE_ROOK;
     board[0x01] = WHITE_KNIGHT;
     board[0x02] = WHITE_BISHOP;
@@ -82,19 +72,15 @@ void Board::setStartingPosition()
     board[0x06] = WHITE_KNIGHT;
     board[0x07] = WHITE_ROOK;
 
-    // White pawns (rank 2)
     for (int file = 0; file < 8; file++)
     {
         board[0x10 + file] = WHITE_PAWN;
     }
 
-    // Black pawns (rank 7)
     for (int file = 0; file < 8; file++)
     {
         board[0x60 + file] = BLACK_PAWN;
     }
-
-    // Black pieces (rank 8)
     board[0x70] = BLACK_ROOK;
     board[0x71] = BLACK_KNIGHT;
     board[0x72] = BLACK_BISHOP;
@@ -104,8 +90,7 @@ void Board::setStartingPosition()
     board[0x76] = BLACK_KNIGHT;
     board[0x77] = BLACK_ROOK;
 
-    // Initialize game state
-    sideToMove = 0; // White to move
+    sideToMove = 0;
     castlingRights = CASTLING_WHITE_KINGSIDE | CASTLING_WHITE_QUEENSIDE |
                      CASTLING_BLACK_KINGSIDE | CASTLING_BLACK_QUEENSIDE;
     enPassantSquare = -1;
@@ -115,11 +100,10 @@ void Board::setStartingPosition()
     moveHistory.clear();
 }
 
-bool Board::setFEN(const std::string &fen)
+bool Board::setFEN(const string &fen)
 {
-    // FEN format: pieces side castling enpassant halfmove fullmove
-    std::istringstream ss(fen);
-    std::string pieces, side, castling, enpassant;
+istringstream ss(fen);
+string pieces, side, castling, enpassant;
     int halfmove, fullmove;
 
     ss >> pieces >> side >> castling >> enpassant >> halfmove >> fullmove;
@@ -189,11 +173,10 @@ bool Board::setFEN(const std::string &fen)
     return true;
 }
 
-std::string Board::getFEN() const
+string Board::getFEN() const
 {
-    std::ostringstream fen;
+    ostringstream fen;
 
-    // Piece placement
     for (int rank = 7; rank >= 0; rank--)
     {
         int emptyCount = 0;
@@ -266,7 +249,6 @@ std::string Board::getFEN() const
     return fen.str();
 }
 
-// ==================== HASHING FUNCTIONS ====================
 
 uint64_t Board::rand64(uint64_t &state)
 {
@@ -381,14 +363,12 @@ uint64_t Board::moveHash(uint64_t currentHash, Move move)
     return currentHash;
 }
 
-// ==================== MOVE GENERATION ====================
 
-std::vector<Move> Board::generateLegalMoves()
+vector<Move> Board::generateLegalMoves()
 {
-    std::vector<Move> pseudoLegal = generatePseudoLegalMoves();
-    std::vector<Move> legalMoves;
+vector<Move> pseudoLegal = generatePseudoLegalMoves();
+vector<Move> legalMoves;
 
-    // Filter out moves that leave king in check
     for (const Move &move : pseudoLegal)
     {
         // Make move temporarily
@@ -431,10 +411,7 @@ std::vector<Move> Board::generateLegalMoves()
             board[move.to] = move.promotionPiece;
         }
 
-        // Check if our king is in check
         bool legal = !isCheck(sideToMove);
-
-        // Undo move
         board[move.from] = board[move.to];
         board[move.to] = info.capturedPiece;
 
@@ -474,10 +451,10 @@ std::vector<Move> Board::generateLegalMoves()
     return legalMoves;
 }
 
-std::vector<Move> Board::getLegalMovesFrom(int square)
+vector<Move> Board::getLegalMovesFrom(int square)
 {
-    std::vector<Move> allLegalMoves = generateLegalMoves();
-    std::vector<Move> movesFromSquare;
+vector<Move> allLegalMoves = generateLegalMoves();
+vector<Move> movesFromSquare;
 
     for (const Move &move : allLegalMoves)
     {
@@ -490,47 +467,45 @@ std::vector<Move> Board::getLegalMovesFrom(int square)
     return movesFromSquare;
 }
 
-std::vector<Move> Board::generatePseudoLegalMoves() const
+vector<Move> Board::generatePseudoLegalMoves() const
 {
-    std::vector<Move> moves;
+vector<Move> moves;
 
-    // Iterate through all squares
     for (int square = 0; square < 128; square++)
     {
         if (square & 0x88)
-            continue; // Skip off-board squares
+            continue;
 
         int piece = board[square];
         if (piece == EMPTY)
             continue;
 
-        // Check if piece belongs to side to move
         if ((sideToMove == 0 && piece < 0) || (sideToMove == 1 && piece > 0))
         {
             continue;
         }
 
-        int pieceType = std::abs(piece);
+        int pieceType = abs(piece);
 
         switch (pieceType)
         {
-        case 1: // Pawn
+        case 1:
             generatePawnMoves(moves, square);
             break;
-        case 2: // Knight
+        case 2:
             generateKnightMoves(moves, square);
             break;
-        case 3: // Bishop
+        case 3:
             generateSlidingMoves(moves, square, BISHOP_DIRECTIONS, 4);
             break;
-        case 4: // Rook
+        case 4:
             generateSlidingMoves(moves, square, ROOK_DIRECTIONS, 4);
             break;
-        case 5: // Queen
+        case 5:
             generateSlidingMoves(moves, square, BISHOP_DIRECTIONS, 4);
             generateSlidingMoves(moves, square, ROOK_DIRECTIONS, 4);
             break;
-        case 6: // King
+        case 6:
             generateKingMoves(moves, square);
             break;
         }
@@ -539,7 +514,7 @@ std::vector<Move> Board::generatePseudoLegalMoves() const
     return moves;
 }
 
-void Board::generateKnightMoves(std::vector<Move> &moves, int from) const
+void Board::generateKnightMoves(vector<Move> &moves, int from) const
 {
     int piece = board[from];
 
@@ -563,7 +538,7 @@ void Board::generateKnightMoves(std::vector<Move> &moves, int from) const
     }
 }
 
-void Board::generateSlidingMoves(std::vector<Move> &moves, int from,
+void Board::generateSlidingMoves(vector<Move> &moves, int from,
                                  const int *directions, int numDirections) const
 {
     int piece = board[from];
@@ -597,7 +572,7 @@ void Board::generateSlidingMoves(std::vector<Move> &moves, int from,
     }
 }
 
-void Board::generatePawnMoves(std::vector<Move> &moves, int from) const
+void Board::generatePawnMoves(vector<Move> &moves, int from) const
 {
     int piece = board[from];
     int direction = (piece > 0) ? 16 : -16; // White up, black down
@@ -665,7 +640,7 @@ void Board::generatePawnMoves(std::vector<Move> &moves, int from) const
     }
 }
 
-void Board::generateKingMoves(std::vector<Move> &moves, int from) const
+void Board::generateKingMoves(vector<Move> &moves, int from) const
 {
     int piece = board[from];
 
@@ -690,7 +665,7 @@ void Board::generateKingMoves(std::vector<Move> &moves, int from) const
     generateCastlingMoves(moves, from);
 }
 
-void Board::generateCastlingMoves(std::vector<Move> &moves, int kingSquare) const
+void Board::generateCastlingMoves(vector<Move> &moves, int kingSquare) const
 {
     // White kingside castling
     if (sideToMove == 0 && (castlingRights & CASTLING_WHITE_KINGSIDE))
@@ -753,7 +728,7 @@ void Board::generateCastlingMoves(std::vector<Move> &moves, int kingSquare) cons
     }
 }
 
-void Board::addPromotionMoves(std::vector<Move> &moves, int from, int to,
+void Board::addPromotionMoves(vector<Move> &moves, int from, int to,
                               int piece, int capturedPiece) const
 {
     // Add all four promotion options
@@ -783,7 +758,6 @@ void Board::addPromotionMoves(std::vector<Move> &moves, int from, int to,
     }
 }
 
-// ==================== CHECK DETECTION ====================
 
 bool Board::isCheck(int side) const
 {
@@ -936,7 +910,6 @@ int Board::findKing(int side) const
     return -1; // King not found
 }
 
-// ==================== MOVE EXECUTION ====================
 
 bool Board::makeMove(const Move &move)
 {
@@ -1074,7 +1047,7 @@ void Board::undoMove()
 void Board::updateCastlingRights(const Move &move)
 {
     // If king moves, lose all castling rights for that side
-    if (std::abs(move.piece) == 6)
+    if (abs(move.piece) == 6)
     {
         if (sideToMove == 0)
         {
@@ -1156,7 +1129,7 @@ bool Board::isInsufficientMaterial() const
         if (p == EMPTY)
             continue;
 
-        int absP = std::abs(p);
+        int absP = abs(p);
         if (absP == 1)
             ++pawnCount;
         else if (absP == 2)
@@ -1223,7 +1196,6 @@ bool Board::isThreefoldRepetition() const
     return false;
 }
 
-// ==================== HELPER FUNCTIONS ====================
 
 int Board::getPiece(int square) const
 {
@@ -1247,51 +1219,50 @@ bool Board::isValidSquare(int square) const
 
 void Board::print() const
 {
-    std::cout << "\n  +---+---+---+---+---+---+---+---+\n";
+cout << "\n  +---+---+---+---+---+---+---+---+\n";
 
     for (int rank = 7; rank >= 0; rank--)
     {
-        std::cout << (rank + 1) << " |";
+cout << (rank + 1) << " |";
 
         for (int file = 0; file < 8; file++)
         {
             int square = makeSquare(file, rank);
             int piece = board[square];
             char c = pieceToChar(piece);
-            std::cout << " " << c << " |";
+cout << " " << c << " |";
         }
 
-        std::cout << "\n  +---+---+---+---+---+---+---+---+\n";
+cout << "\n  +---+---+---+---+---+---+---+---+\n";
     }
 
-    std::cout << "    a   b   c   d   e   f   g   h\n\n";
-    std::cout << "FEN: " << getFEN() << "\n";
-    std::cout << "Side to move: " << (sideToMove == 0 ? "White" : "Black") << "\n";
+cout << "    a   b   c   d   e   f   g   h\n\n";
+cout << "FEN: " << getFEN() << "\n";
+cout << "Side to move: " << (sideToMove == 0 ? "White" : "Black") << "\n";
 }
 
 // ==================== MOVE STRING FUNCTIONS ====================
 
-std::string Move::toAlgebraic() const
+string Move::toAlgebraic() const
 {
     return squareToAlgebraic(from) + squareToAlgebraic(to);
 }
 
-std::string Move::toUCI() const
+string Move::toUCI() const
 {
-    std::string uci = squareToAlgebraic(from) + squareToAlgebraic(to);
+string uci = squareToAlgebraic(from) + squareToAlgebraic(to);
 
     if (flags & FLAG_PROMOTION)
     {
-        char promoChar = std::tolower(pieceToChar(promotionPiece));
+        char promoChar = tolower(pieceToChar(promotionPiece));
         uci += promoChar;
     }
 
     return uci;
 }
 
-// ==================== HELPER FUNCTIONS (GLOBAL) ====================
 
-std::string squareToAlgebraic(int square88)
+string squareToAlgebraic(int square88)
 {
     if (square88 & 0x88)
         return "-";
@@ -1299,14 +1270,14 @@ std::string squareToAlgebraic(int square88)
     int file = fileOf(square88);
     int rank = rankOf(square88);
 
-    std::string result;
+string result;
     result += (char)('a' + file);
     result += (char)('1' + rank);
 
     return result;
 }
 
-int algebraicToSquare(const std::string &algebraic)
+int algebraicToSquare(const string &algebraic)
 {
     if (algebraic.length() < 2)
         return -1;

@@ -3,38 +3,32 @@
 #include <limits>
 #include <iostream>
 using namespace std;
-/**
- * Engine Implementation
- *
- * This is a basic placeholder implementation.
- * Teammates should extend this with proper search and evaluation.
- */
 
 Engine::Engine(Board &b, searchType searchFunc, int depth, int startingTime, int timeIncrement) : board(b), searchFunc(searchFunc), searchDepth(depth), nodesSearched(0), remainingTime(startingTime), timeIncrement(timeIncrement)
 {
 }
 
-void Engine::setPosition(const std::string &fen)
+void Engine::setPosition(const string &fen)
 {
     board.setFEN(fen);
 }
 
 inline int Engine::getPieceValue(int piece)
 {
-    switch (std::abs(piece))
+    switch (abs(piece))
     {
     case 1:
-        return 100; // Pawn
+        return 100;
     case 2:
-        return 320; // Knight
+        return 320;
     case 3:
-        return 330; // Bishop
+        return 330;
     case 4:
-        return 500; // Rook
+        return 500;
     case 5:
-        return 900; // Queen
+        return 900;
     case 6:
-        return 20000; // King
+        return 20000;
     default:
         return 0;
     }
@@ -49,28 +43,25 @@ void Engine::sortMovesWithOrdering(vector<Move> &moves)
         if (best_move == m)
             score += 1000000;
 
-        // MVV-LVA for captures
         if (m.capturedPiece != 0)
         {
             int victimVal = getPieceValue(m.capturedPiece);
             int attackerVal = getPieceValue(m.piece);
-            score += victimVal * 100 - attackerVal + 100000; // Offset to put captures above quiet moves
+            score += victimVal * 100 - attackerVal + 100000;
         }
 
-        // TT Entry Check
         uint64_t moveHash = board.moveHash(board.hash, m);
         TTEntry ent = TT[moveHash & (TT_SIZE - 1)];
         if (ent.key == moveHash)
             score += 50000;
 
-        // Promotions bonus
         if (m.flags & FLAG_PROMOTION)
             score += getPieceValue(m.promotionPiece) * 100;
 
         m.score = score;
     }
 
-    std::sort(moves.begin(), moves.end(), [](const Move &a, const Move &b)
+sort(moves.begin(), moves.end(), [](const Move &a, const Move &b)
               { return a.score > b.score; });
 }
 
@@ -109,8 +100,8 @@ Move Engine::getAlphaBetaMove()
         return Move();
 
     Move bestMove = legalMoves[0];
-    int alpha = std::numeric_limits<int>::min() + 1;
-    int beta = std::numeric_limits<int>::max();
+    int alpha = numeric_limits<int>::min() + 1;
+    int beta = numeric_limits<int>::max();
 
     for (Move &move : legalMoves)
     {
@@ -153,10 +144,10 @@ Move Engine::getIterativeDeepeningMove()
         cout << "Wrong value for searchType\n";
         return Move();
     }
-    std::cout << "Best move: " << best_move.toAlgebraic()
+cout << "Best move: " << best_move.toAlgebraic()
               << " (score: " << best_score << " )\n";
-    std::cout << "Nodes searched: " << nodesSearched << "\n";
-    remainingTime = remainingTime - chrono::duration_cast<std::chrono::milliseconds>(chrono::steady_clock::now() - startTime).count() + timeIncrement;
+cout << "Nodes searched: " << nodesSearched << "\n";
+    remainingTime = remainingTime - chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - startTime).count() + timeIncrement;
     searchCancelled = false;
     return best_move;
 }

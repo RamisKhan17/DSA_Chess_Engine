@@ -19,7 +19,7 @@ using namespace std;
  * The Move Generation module (Board class) is complete and ready for integration.
  */
 
-static const int TT_SIZE = 4194304; // ~1M entries (16x larger)
+static const int TT_SIZE = 4194304;
 
 enum bound
 {
@@ -79,40 +79,12 @@ public:
      */
     void setPosition(const std::string &fen);
 
-    /**
-     * Gets the best move for current position
-     * This is where your search algorithm goes!
-     *
-     * @return Best move found
-     *
-     * TODO (Search Team): Implement alpha-beta search
-     * TODO (Evaluation Team): Implement position evaluation
-     * TODO (Optimization Team): Add transposition tables and move ordering
-     */
     Move getStandardSearchMove();
     Move getAlphaBetaMove();
     Move getIterativeDeepeningMove();
     Move getBestMove();
-    /**
-     * Evaluates current position
-     * Positive = good for white, Negative = good for black
-     *
-     * @return Evaluation score in centipawns
-     *
-     * TODO (Evaluation Team): Implement this!
-     */
+    
     int evaluate();
-
-    /**
-     * Search function with alpha-beta pruning
-     *
-     * @param depth - Remaining search depth
-     * @param alpha - Alpha value for pruning
-     * @param beta - Beta value for pruning
-     * @return Best score found
-     *
-     * TODO (Search Team): Implement this!
-     */
     inline int getPieceValue(int piece);
     void sortMovesWithOrdering(std::vector<Move> &moves);
 
