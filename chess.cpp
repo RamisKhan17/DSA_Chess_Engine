@@ -101,7 +101,7 @@ int main(int argc, char **argv)
         // Test move generation
         vector<Move> legalMoves = board.generateLegalMoves();
         // Create and run GUI
-        ChessGUI gui(board, MATCH_TYPE, e1, e2);
+        ChessGUI gui(board, MATCH_TYPE, e1, e2, START_TIME, TIME_INCREMENT);
         gui.run();
     }
     catch (const std::exception &e)

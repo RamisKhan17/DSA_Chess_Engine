@@ -7,6 +7,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <chrono>
 
 /**
  * ChessGUI - Graphical User Interface for the chess engine
@@ -65,6 +66,13 @@ private:
     bool gameOver;
     std::string gameResult;
 
+    // Clock / timer state
+    long long whiteTimeMs;
+    long long blackTimeMs;
+    long long initialTimeMs;
+    int incrementMs;
+    std::chrono::steady_clock::time_point lastTimerUpdate;
+
     // Scaling variables
     float scaleX;
     float scaleY;
@@ -84,7 +92,7 @@ public:
      * Constructor
      * @param b - Reference to Board object
      */
-    ChessGUI(Board &b, int enginePlay, Engine &e1, Engine &e2);
+    ChessGUI(Board &b, int enginePlay, Engine &e1, Engine &e2, int startTimeMs, int incrementMs);
     /**
      * Main game loop - runs until window is closed
      * Time Complexity: O(∞) - runs continuously
@@ -190,6 +198,11 @@ private:
     void drawInfoPanel();
 
     /**
+     * Draws player clocks
+     */
+    void drawClocks();
+
+    /**
      * Draws move history
      */
     void drawMoveHistory();
@@ -277,6 +290,21 @@ private:
      * Converts move to algebraic notation for display
      */
     std::string formatMove(const Move &move, int moveNumber) const;
+
+    /**
+     * Updates active player's timer
+     */
+    void updateTimers();
+
+    /**
+     * Applies increment and final timing for a completed move
+     */
+    void handleMoveTiming(int movingSide, long long moveDurationMs = 0);
+
+    /**
+     * Formats milliseconds as mm:ss
+     */
+    std::string formatTime(long long ms) const;
 };
 
 #endif // GUI_H

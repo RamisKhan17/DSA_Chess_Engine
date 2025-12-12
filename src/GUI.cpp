@@ -1,4 +1,5 @@
 #include "../include/GUI.h"
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -7,7 +8,16 @@ using namespace std::chrono;
 
 // ==================== CONSTRUCTOR ====================
 
-ChessGUI::ChessGUI(Board &b, int enginePlay, Engine &e1, Engine &e2) : board(b), engine1(e1), engine2(e2), engineTurn(enginePlay)
+ChessGUI::ChessGUI(Board &b, int enginePlay, Engine &e1, Engine &e2, int startTimeMs, int incrementMs)
+    : board(b),
+      engine1(e1),
+      engine2(e2),
+      engineTurn(enginePlay),
+      whiteTimeMs(startTimeMs),
+      blackTimeMs(startTimeMs),
+      initialTimeMs(startTimeMs),
+      incrementMs(incrementMs),
+      lastTimerUpdate(steady_clock::now())
 {
     // Create window with resize support
     window.create(sf::VideoMode({WINDOW_WIDTH, WINDOW_HEIGHT}),
@@ -101,18 +111,22 @@ void ChessGUI::run()
 {
     while (window.isOpen())
     {
+        updateTimers();
         if (engineTurn != 2)
         {
             handleEvents();
             render();
+            updateTimers();
             if (engineTurn > 0)
             {
-                auto start = high_resolution_clock::now();
+                int movingSide = board.getSideToMove();
+                auto start = steady_clock::now();
 
                 makeEngineMove(engine1);
-                auto end = high_resolution_clock::now();
+                auto end = steady_clock::now();
                 auto duration = duration_cast<milliseconds>(end - start);
 
+                handleMoveTiming(movingSide, duration.count());
                 std::cout << "Time taken: " << duration.count() << " ms\n";
                 engineTurn = -engineTurn;
             }
@@ -120,22 +134,28 @@ void ChessGUI::run()
         else
         {
             render();
-            auto start = high_resolution_clock::now();
+            updateTimers();
+            int movingSide = board.getSideToMove();
+            auto start = steady_clock::now();
 
             makeEngineMove(engine1);
-            auto end = high_resolution_clock::now();
+            auto end = steady_clock::now();
             auto duration = duration_cast<milliseconds>(end - start);
 
+            handleMoveTiming(movingSide, duration.count());
             cout << "Time taken: " << duration.count() << " ms\n";
 
             render();
+            updateTimers();
 
-            start = high_resolution_clock::now();
+            movingSide = board.getSideToMove();
+            start = steady_clock::now();
 
             makeEngineMove(engine2);
-            end = high_resolution_clock::now();
+            end = steady_clock::now();
             duration = duration_cast<milliseconds>(end - start);
 
+            handleMoveTiming(movingSide, duration.count());
             cout << "Time taken: " << duration.count() << " ms\n";
 
             render();
@@ -219,6 +239,7 @@ void ChessGUI::handleEvents()
                     }
                     clearSelection();
                     checkGameOver();
+                    lastTimerUpdate = steady_clock::now();
                 }
             }
 
@@ -230,6 +251,9 @@ void ChessGUI::handleEvents()
                 clearSelection();
                 gameOver = false;
                 gameResult = "";
+                whiteTimeMs = initialTimeMs;
+                blackTimeMs = initialTimeMs;
+                lastTimerUpdate = steady_clock::now();
             }
         }
     }
@@ -387,6 +411,9 @@ bool ChessGUI::tryMakeMove(int fromSquare, int toSquare)
 
     if (foundMove)
     {
+        int movingSide = board.getSideToMove();
+        updateTimers();
+
         // Store move for history
         std::string moveStr = formatMove(*foundMove, board.getFullMoveNumber());
 
@@ -399,6 +426,7 @@ bool ChessGUI::tryMakeMove(int fromSquare, int toSquare)
         moveHistory.push_back(moveStr);
 
         updateGameState();
+        handleMoveTiming(movingSide);
         engineTurn = -engineTurn;
         return true;
     }
@@ -656,11 +684,14 @@ void ChessGUI::drawInfoPanel()
     window.draw(turnText);
     yOffset += 30 * std::min(scaleX, scaleY);
 
+    // Player clocks
+    drawClocks();
+
     // Game status
     drawGameStatus();
 
     // Move history
-    yOffset = 150 * std::min(scaleX, scaleY);
+    yOffset = 190 * std::min(scaleX, scaleY);
     float historyTitleSize = 18.0f * std::min(scaleX, scaleY);
     sf::Text historyTitle(font, "Move History:", static_cast<unsigned int>(historyTitleSize));
     historyTitle.setFillColor(sf::Color::White);
@@ -678,6 +709,30 @@ void ChessGUI::drawInfoPanel()
     controls.setFillColor(sf::Color(150, 150, 150));
     controls.setPosition(sf::Vector2f(currentBoardSize + 20, yOffset));
     window.draw(controls);
+}
+
+void ChessGUI::drawClocks()
+{
+    if (font.getInfo().family == "")
+        return;
+
+    float scale = std::min(scaleX, scaleY);
+    float baseY = 80.0f * scale;
+    float lineHeight = 22.0f * scale;
+    float clockSize = 18.0f * scale;
+
+    sf::Color activeColor(180, 255, 180);
+    sf::Color inactiveColor = sf::Color::White;
+
+    sf::Text whiteClock(font, "White: " + formatTime(whiteTimeMs), static_cast<unsigned int>(clockSize));
+    whiteClock.setFillColor(board.getSideToMove() == 0 ? activeColor : inactiveColor);
+    whiteClock.setPosition(sf::Vector2f(currentBoardSize + 20, baseY));
+    window.draw(whiteClock);
+
+    sf::Text blackClock(font, "Black: " + formatTime(blackTimeMs), static_cast<unsigned int>(clockSize));
+    blackClock.setFillColor(board.getSideToMove() == 1 ? activeColor : inactiveColor);
+    blackClock.setPosition(sf::Vector2f(currentBoardSize + 20, baseY + lineHeight));
+    window.draw(blackClock);
 }
 
 void ChessGUI::drawMoveHistory()
@@ -706,7 +761,7 @@ void ChessGUI::drawGameStatus()
     if (font.getInfo().family == "")
         return;
 
-    float yOffset = 100 * std::min(scaleX, scaleY);
+    float yOffset = 140 * std::min(scaleX, scaleY);
     float statusSize = 16.0f * std::min(scaleX, scaleY);
     sf::Text statusText(font, "", static_cast<unsigned int>(statusSize));
     statusText.setPosition(sf::Vector2f(currentBoardSize + 20, yOffset));
@@ -829,6 +884,8 @@ bool ChessGUI::handlePromotionClick(int x, int y)
 
     if (pieceIndex >= 0 && pieceIndex < static_cast<int>(pendingPromotionMoves.size()))
     {
+        int movingSide = board.getSideToMove();
+        updateTimers();
         // Find the selected move and execute it
         Move selectedMove = pendingPromotionMoves[pieceIndex];
 
@@ -843,6 +900,8 @@ bool ChessGUI::handlePromotionClick(int x, int y)
         moveHistory.push_back(moveStr);
 
         updateGameState();
+        handleMoveTiming(movingSide);
+        engineTurn = -engineTurn;
 
         // Clear promotion state
         pendingPromotionMoves.clear();
@@ -984,5 +1043,52 @@ std::string ChessGUI::formatMove(const Move &move, int moveNumber) const
         return (board.getSideToMove() == 0 ? std::to_string(moveNumber) + ". " : "") + "O-O-O";
     }
 
+    return oss.str();
+}
+
+void ChessGUI::updateTimers()
+{
+    if (gameOver)
+    {
+        lastTimerUpdate = steady_clock::now();
+        return;
+    }
+
+    auto now = steady_clock::now();
+    long long elapsed = duration_cast<milliseconds>(now - lastTimerUpdate).count();
+    if (elapsed <= 0)
+        return;
+
+    int activeSide = board.getSideToMove();
+    long long &timeRef = (activeSide == 0) ? whiteTimeMs : blackTimeMs;
+    timeRef = std::max(0LL, timeRef - elapsed);
+
+    lastTimerUpdate = now;
+}
+
+void ChessGUI::handleMoveTiming(int movingSide, long long moveDurationMs)
+{
+    long long &timeRef = (movingSide == 0) ? whiteTimeMs : blackTimeMs;
+
+    if (moveDurationMs > 0)
+    {
+        timeRef = std::max(0LL, timeRef - moveDurationMs);
+    }
+
+    timeRef = std::max(0LL, timeRef + static_cast<long long>(incrementMs));
+    lastTimerUpdate = steady_clock::now();
+}
+
+std::string ChessGUI::formatTime(long long ms) const
+{
+    if (ms < 0)
+        ms = 0;
+    long long totalSeconds = ms / 1000;
+    long long minutes = totalSeconds / 60;
+    long long seconds = totalSeconds % 60;
+
+    std::ostringstream oss;
+    oss << std::setw(2) << std::setfill('0') << minutes
+        << ":" << std::setw(2) << std::setfill('0') << seconds;
     return oss.str();
 }
