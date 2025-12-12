@@ -101,7 +101,7 @@ void ChessGUI::run()
             handleEvents();
             render();
             updateTimers();
-            if (!board.isCheckmate() && !board.isDraw() && engineTurn > 0)
+            if (!gameOver && !board.isCheckmate() && !board.isDraw() && engineTurn > 0)
             {
                 int movingSide = board.getSideToMove();
                 auto start = steady_clock::now();
@@ -120,7 +120,7 @@ void ChessGUI::run()
             render();
             updateTimers();
 
-            if (!board.isCheckmate() && !board.isDraw())
+            if (!gameOver && !board.isCheckmate() && !board.isDraw())
             {
                 int movingSide = board.getSideToMove();
                 auto start = steady_clock::now();
@@ -965,6 +965,18 @@ void ChessGUI::updateTimers()
     long long &timeRef = (activeSide == 0) ? whiteTimeMs : blackTimeMs;
     timeRef = max(0LL, timeRef - elapsed);
 
+    // Check if time has expired for either player
+    if (whiteTimeMs <= 0)
+    {
+        gameOver = true;
+        gameResult = "Black Wins!\nTime expired";
+    }
+    else if (blackTimeMs <= 0)
+    {
+        gameOver = true;
+        gameResult = "White Wins!\nTime expired";
+    }
+
     lastTimerUpdate = now;
 }
 
@@ -978,6 +990,19 @@ void ChessGUI::handleMoveTiming(int movingSide, long long moveDurationMs)
     }
 
     timeRef = max(0LL, timeRef + static_cast<long long>(incrementMs));
+    
+    // Check if time has expired for either player after move timing
+    if (whiteTimeMs <= 0)
+    {
+        gameOver = true;
+        gameResult = "Black Wins!\nTime expired";
+    }
+    else if (blackTimeMs <= 0)
+    {
+        gameOver = true;
+        gameResult = "White Wins!\nTime expired";
+    }
+    
     lastTimerUpdate = steady_clock::now();
 }
 

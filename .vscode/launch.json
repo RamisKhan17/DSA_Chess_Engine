@@ -14,6 +14,25 @@
       "MIMode": "gdb",
       "miDebuggerPath": "gdb.exe",
       "preLaunchTask": "Compile Chess Engine"
+    },
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "cppdbg",
+      "request": "launch",
+      "args": [],
+      "stopAtEntry": false,
+      "externalConsole": true,
+      "cwd": "d:/CS/Semester 3/Data Structures and Algorithms/Project/DSA_Chess_Engine",
+      "program": "d:/CS/Semester 3/Data Structures and Algorithms/Project/DSA_Chess_Engine/build/Debug/outDebug",
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
     }
   ]
 }
