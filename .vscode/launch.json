@@ -6,7 +6,14 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/chess.exe",
-      "args": [],
+      "args": [
+  "-t", "600000",
+  "-i", "5000",
+  "-d", "5",
+  "-m", "-1",
+  "-f", "4"
+]
+,
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],

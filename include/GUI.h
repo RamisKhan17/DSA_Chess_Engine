@@ -9,13 +9,13 @@
 #include <chrono>
 
 #ifdef __has_include
-#  if __has_include(<SFML/Graphics.hpp>)
-#    include <SFML/Graphics.hpp>
-#  else
-#    error "SFML/Graphics.hpp not found. Please install SFML and make sure the include path is set correctly."
-#  endif
+#if __has_include(<SFML/Graphics.hpp>)
+#include <SFML/Graphics.hpp>
 #else
-#  include <SFML/Graphics.hpp>
+#error "SFML/Graphics.hpp not found. Please install SFML and make sure the include path is set correctly."
+#endif
+#else
+#include <SFML/Graphics.hpp>
 #endif
 
 class ChessGUI
@@ -43,7 +43,8 @@ private:
     sf::Color lastMoveColor;
 
     // Piece textures - load actual PNG images
-    std::map<int, sf::Texture> pieceTextures;
+    map<int, sf::Texture> pieceTextures;
+    map<int, sf::Texture> spellTextures;
 
     // Fonts
     sf::Font font;

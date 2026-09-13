@@ -61,8 +61,8 @@ void Engine::sortMovesWithOrdering(vector<Move> &moves)
         m.score = score;
     }
 
-sort(moves.begin(), moves.end(), [](const Move &a, const Move &b)
-              { return a.score > b.score; });
+    sort(moves.begin(), moves.end(), [](const Move &a, const Move &b)
+         { return a.score > b.score; });
 }
 
 Move Engine::getStandardSearchMove()
@@ -138,15 +138,15 @@ Move Engine::getIterativeDeepeningMove()
         best_score = TTIterativeDeepening(searchDepth);
         break;
     case TT_ITERATIVE_DEEPENING_AW:
-        best_score = TTIterativeDeepeningAW(searchDepth);
+        best_score = TTIterativeDeepening(searchDepth);
         break;
     default:
         cout << "Wrong value for searchType\n";
         return Move();
     }
-cout << "Best move: " << best_move.toAlgebraic()
-              << " (score: " << best_score << " )\n";
-cout << "Nodes searched: " << nodesSearched << "\n";
+    cout << "Best move: " << best_move.toAlgebraic()
+         << " (score: " << best_score << " )\n";
+    cout << "Nodes searched: " << nodesSearched << "\n";
     remainingTime = remainingTime - chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - startTime).count() + timeIncrement;
     searchCancelled = false;
     return best_move;
