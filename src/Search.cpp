@@ -33,7 +33,7 @@ int Engine::search(int depth)
 int Engine::alphaBeta(int depth, int alpha, int beta)
 {
     nodesSearched++;
-    if ((moveTime != -1) && (nodesSearched % (remainingTime / 275)) == 0)
+    if ((moveTime != -1) && (nodesSearched & (remainingTime / 275)) == 0)
     {
         if (chrono::duration_cast<chrono::milliseconds>(
                 chrono::steady_clock::now() - startTime)
@@ -73,7 +73,7 @@ int Engine::alphaBeta(int depth, int alpha, int beta)
 int Engine::TTAlphaBeta(int depth, int alpha, int beta)
 {
     nodesSearched++;
-    if ((nodesSearched % (remainingTime / 275)) == 0)
+    if ((nodesSearched & (remainingTime / 275)) == 0)
     {
         if (chrono::duration_cast<chrono::milliseconds>(
                 chrono::steady_clock::now() - startTime)

@@ -83,7 +83,7 @@ public:
     Move getAlphaBetaMove();
     Move getIterativeDeepeningMove();
     Move getBestMove();
-
+    
     int evaluate();
     inline int getPieceValue(int piece);
     void sortMovesWithOrdering(std::vector<Move> &moves);

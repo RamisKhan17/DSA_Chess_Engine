@@ -102,8 +102,8 @@ void Board::setStartingPosition()
 
 bool Board::setFEN(const string &fen)
 {
-    istringstream ss(fen);
-    string pieces, side, castling, enpassant;
+istringstream ss(fen);
+string pieces, side, castling, enpassant;
     int halfmove, fullmove;
 
     ss >> pieces >> side >> castling >> enpassant >> halfmove >> fullmove;
@@ -249,6 +249,7 @@ string Board::getFEN() const
     return fen.str();
 }
 
+
 uint64_t Board::rand64(uint64_t &state)
 {
     uint64_t z = (state += 0x9E3779B97F4A7C15ULL);
@@ -362,10 +363,11 @@ uint64_t Board::moveHash(uint64_t currentHash, Move move)
     return currentHash;
 }
 
+
 vector<Move> Board::generateLegalMoves()
 {
-    vector<Move> pseudoLegal = generatePseudoLegalMoves();
-    vector<Move> legalMoves;
+vector<Move> pseudoLegal = generatePseudoLegalMoves();
+vector<Move> legalMoves;
 
     for (const Move &move : pseudoLegal)
     {
@@ -451,8 +453,8 @@ vector<Move> Board::generateLegalMoves()
 
 vector<Move> Board::getLegalMovesFrom(int square)
 {
-    vector<Move> allLegalMoves = generateLegalMoves();
-    vector<Move> movesFromSquare;
+vector<Move> allLegalMoves = generateLegalMoves();
+vector<Move> movesFromSquare;
 
     for (const Move &move : allLegalMoves)
     {
@@ -467,7 +469,7 @@ vector<Move> Board::getLegalMovesFrom(int square)
 
 vector<Move> Board::generatePseudoLegalMoves() const
 {
-    vector<Move> moves;
+vector<Move> moves;
 
     for (int square = 0; square < 128; square++)
     {
@@ -756,6 +758,7 @@ void Board::addPromotionMoves(vector<Move> &moves, int from, int to,
     }
 }
 
+
 bool Board::isCheck(int side) const
 {
     int kingSquare = findKing(side);
@@ -906,6 +909,7 @@ int Board::findKing(int side) const
 
     return -1; // King not found
 }
+
 
 bool Board::makeMove(const Move &move)
 {
@@ -1192,6 +1196,7 @@ bool Board::isThreefoldRepetition() const
     return false;
 }
 
+
 int Board::getPiece(int square) const
 {
     if (square & 0x88)
@@ -1214,26 +1219,26 @@ bool Board::isValidSquare(int square) const
 
 void Board::print() const
 {
-    cout << "\n  +---+---+---+---+---+---+---+---+\n";
+cout << "\n  +---+---+---+---+---+---+---+---+\n";
 
     for (int rank = 7; rank >= 0; rank--)
     {
-        cout << (rank + 1) << " |";
+cout << (rank + 1) << " |";
 
         for (int file = 0; file < 8; file++)
         {
             int square = makeSquare(file, rank);
             int piece = board[square];
             char c = pieceToChar(piece);
-            cout << " " << c << " |";
+cout << " " << c << " |";
         }
 
-        cout << "\n  +---+---+---+---+---+---+---+---+\n";
+cout << "\n  +---+---+---+---+---+---+---+---+\n";
     }
 
-    cout << "    a   b   c   d   e   f   g   h\n\n";
-    cout << "FEN: " << getFEN() << "\n";
-    cout << "Side to move: " << (sideToMove == 0 ? "White" : "Black") << "\n";
+cout << "    a   b   c   d   e   f   g   h\n\n";
+cout << "FEN: " << getFEN() << "\n";
+cout << "Side to move: " << (sideToMove == 0 ? "White" : "Black") << "\n";
 }
 
 // ==================== MOVE STRING FUNCTIONS ====================
@@ -1245,7 +1250,7 @@ string Move::toAlgebraic() const
 
 string Move::toUCI() const
 {
-    string uci = squareToAlgebraic(from) + squareToAlgebraic(to);
+string uci = squareToAlgebraic(from) + squareToAlgebraic(to);
 
     if (flags & FLAG_PROMOTION)
     {
@@ -1256,6 +1261,7 @@ string Move::toUCI() const
     return uci;
 }
 
+
 string squareToAlgebraic(int square88)
 {
     if (square88 & 0x88)
@@ -1264,7 +1270,7 @@ string squareToAlgebraic(int square88)
     int file = fileOf(square88);
     int rank = rankOf(square88);
 
-    string result;
+string result;
     result += (char)('a' + file);
     result += (char)('1' + rank);
 
